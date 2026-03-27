@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jari جاري — Buy, Sell & Discover Near You</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:       #2BBFAA;
+  --teal-d:     #1E9E8C;
+  --teal-pale:  #E4F8F5;
+  --teal-mid:   #B2EBE4;
+  --ink:        #0F1F2D;
+  --ink-mid:    #2C3E50;
+  --sky:        #F0FAFB;
+  --white:      #FFFFFF;
+  --sand:       #E2EDF2;
+  --muted:      #7A93A5;
+  --gold:       #F5A623;
+  --red:        #FF4D4F;
+  --green:      #52C41A;
+  --wa:         #25D366;
+  --radius:     14px;
+  --shadow-sm:  0 2px 10px rgba(15,31,45,.07);
+  --shadow-md:  0 6px 28px rgba(15,31,45,.10);
+  --shadow-lg:  0 16px 48px rgba(15,31,45,.14);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Sora',sans-serif;background:var(--sky);color:var(--ink);overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-thumb{background:var(--teal-mid);border-radius:10px;}
+
+/* ─── UTILITY ─── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;}
+.badge-teal{background:var(--teal-pale);color:var(--teal-d);}
+.badge-gold{background:#FFF5E0;color:#B87A00;}
+.badge-red{background:#FFF1F0;color:var(--red);}
+.badge-ink{background:var(--ink);color:white;}
+.chip{background:var(--sky);border:1.5px solid var(--sand);padding:5px 14px;border-radius:30px;font-size:.82rem;cursor:pointer;font-family:'Sora',sans-serif;color:var(--ink);transition:all .15s;white-space:nowrap;}
+.chip:hover,.chip.on{background:var(--teal);color:white;border-color:var(--teal);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-weight:600;transition:all .2s;border-radius:30px;}
+.btn-primary{background:linear-gradient(135deg,var(--teal) 0%,var(--teal-d) 100%);color:white;padding:11px 24px;font-size:.9rem;box-shadow:0 4px 16px rgba(43,191,170,.35);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(43,191,170,.45);}
+.btn-ghost{background:transparent;border:1.5px solid var(--sand);color:var(--ink);padding:10px 20px;font-size:.88rem;}
+.btn-ghost:hover{background:var(--teal-pale);border-color:var(--teal);}
+.btn-wa{background:var(--wa);color:white;padding:7px 14px;font-size:.78rem;border-radius:20px;}
+.btn-wa:hover{background:#1da851;}
+
+/* ─── NAV ─── */
+.nav{position:sticky;top:0;z-index:500;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--sand);height:62px;display:flex;align-items:center;padding:0 2rem;gap:1rem;box-shadow:var(--shadow-sm);}
+.logo{display:flex;align-items:center;gap:9px;cursor:pointer;text-decoration:none;flex-shrink:0;}
+.logo-icon{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--teal) 0%,var(--teal-d) 100%);display:flex;align-items:center;justify-content:center;font-family:'Tajawal',sans-serif;font-weight:800;font-size:1rem;color:white;box-shadow:0 3px 10px rgba(43,191,170,.4);}
+.logo-name{font-size:1.25rem;font-weight:800;color:var(--ink);letter-spacing:-.5px;}
+.logo-sub{font-family:'Tajawal',sans-serif;font-size:.65rem;color:var(--muted);font-weight:500;letter-spacing:.5px;}
+.nav-search{flex:1;max-width:480px;display:flex;align-items:center;background:var(--sky);border:1.5px solid var(--sand);border-radius:30px;padding:0 16px;gap:8px;transition:all .2s;}
+.nav-search:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px rgba(43,191,170,.12);}
+.nav-search input{flex:1;border:none;outline:none;background:transparent;font-family:'Sora',sans-serif;font-size:.88rem;color:var(--ink);padding:9px 0;}
+.nav-search svg{color:var(--muted);}
+.nav-spacer{flex:1;}
+.nav-loc{display:flex;align-items:center;gap:6px;background:var(--teal-pale);border:1px solid var(--teal-mid);border-radius:20px;padding:5px 12px;font-size:.76rem;font-weight:600;color:var(--teal-d);cursor:pointer;white-space:nowrap;}
+.nav-loc .pulse{width:7px;height:7px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.nav-icon-btn{width:38px;height:38px;border-radius:50%;background:var(--sky);border:1.5px solid var(--sand);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .15s;flex-shrink:0;}
+.nav-icon-btn:hover{background:var(--teal-pale);border-color:var(--teal);}
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid white;}
+.lang-btn{background:var(--sky);border:1.5px solid var(--sand);padding:5px 13px;border-radius:20px;font-family:'Sora',sans-serif;font-size:.78rem;cursor:pointer;color:var(--ink);transition:all .15s;}
+.lang-btn:hover{background:var(--teal);color:white;border-color:var(--teal);}
+
+/* ─── HERO ─── */
+.hero{background:linear-gradient(145deg,#0B1E2C 0%,#0D2E40 50%,#0A3A4A 100%);padding:4.5rem 2rem 3rem;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-120px;right:-80px;width:560px;height:560px;background:radial-gradient(circle,rgba(43,191,170,.22) 0%,transparent 65%);border-radius:50%;}
+.hero::after{content:'';position:absolute;bottom:-100px;left:10%;width:420px;height:420px;background:radial-gradient(circle,rgba(43,191,170,.1) 0%,transparent 65%);border-radius:50%;}
+.hero-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;position:relative;z-index:1;}
+.hero-left{}
+.hero-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(43,191,170,.15);border:1px solid rgba(43,191,170,.35);border-radius:20px;padding:5px 14px;margin-bottom:1.5rem;font-size:.75rem;color:#80E8DC;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+.hero-pill .dot{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite;}
+.hero h1{font-size:clamp(2rem,4vw,3.2rem);font-weight:800;color:white;line-height:1.1;letter-spacing:-.5px;margin-bottom:1rem;}
+.hero h1 em{font-style:normal;color:#6EE7DA;position:relative;}
+.hero-sub{font-size:.95rem;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:2rem;max-width:440px;}
+.hero-search{display:flex;background:white;border-radius:40px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.25);margin-bottom:1.5rem;}
+.hero-search input{flex:1;border:none;outline:none;padding:14px 22px;font-family:'Sora',sans-serif;font-size:.92rem;color:var(--ink);}
+.hero-search select{border:none;outline:none;background:var(--sky);padding:0 14px;font-family:'Sora',sans-serif;font-size:.82rem;color:var(--ink);border-left:1px solid var(--sand);cursor:pointer;}
+.hero-search button{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:white;border:none;padding:0 26px;font-family:'Sora',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;transition:opacity .15s;}
+.hero-search button:hover{opacity:.9;}
+.hero-tags{display:flex;gap:.6rem;flex-wrap:wrap;}
+.hero-tag{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.75);padding:4px 12px;border-radius:20px;font-size:.75rem;cursor:pointer;transition:all .15s;}
+.hero-tag:hover{background:rgba(43,191,170,.2);color:#80E8DC;border-color:rgba(43,191,170,.4);}
+.hero-right{display:flex;flex-direction:column;gap:.9rem;}
+.hero-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:.9rem 1.1rem;display:flex;align-items:center;gap:12px;backdrop-filter:blur(8px);animation:floatY 4s ease-in-out infinite;}
+.hero-card:nth-child(2){animation-delay:1.5s;}
+.hero-card:nth-child(3){animation-delay:3s;}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.hc-img{width:50px;height:50px;border-radius:12px;background:var(--teal-pale);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+.hc-title{font-size:.85rem;color:white;font-weight:600;margin-bottom:2px;}
+.hc-price{font-size:.78rem;color:#6EE7DA;font-weight:700;}
+.hc-meta{font-size:.7rem;color:rgba(255,255,255,.5);}
+.hc-right{margin-left:auto;text-align:right;}
+.hc-tag{font-size:.65rem;background:rgba(43,191,170,.2);color:#80E8DC;padding:2px 8px;border-radius:8px;font-weight:700;}
+
+/* ─── STATS ─── */
+.stats-bar{background:linear-gradient(135deg,var(--teal) 0%,var(--teal-d) 100%);display:flex;justify-content:center;}
+.stat{flex:1;max-width:200px;text-align:center;padding:1.2rem 1rem;border-right:1px solid rgba(255,255,255,.2);color:white;}
+.stat:last-child{border-right:none;}
+.stat-n{font-size:1.7rem;font-weight:800;letter-spacing:-.5px;}
+.stat-l{font-size:.72rem;opacity:.78;margin-top:2px;}
+
+/* ─── TRUST BANNER ─── */
+.trust-bar{background:white;border-bottom:1px solid var(--sand);padding:.85rem 2rem;display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;}
+.trust-item{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:600;color:var(--ink-mid);}
+.trust-item svg{color:var(--teal);}
+
+/* ─── CAT ROW ─── */
+.cat-section{padding:2.2rem 2rem 1.5rem;}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1.2rem;}
+.sec-title{font-size:1.3rem;font-weight:800;letter-spacing:-.3px;}
+.sec-link{font-size:.82rem;color:var(--teal);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+.cats{display:flex;gap:.8rem;overflow-x:auto;padding-bottom:.4rem;scrollbar-width:none;}
+.cats::-webkit-scrollbar{display:none;}
+.cat{display:flex;flex-direction:column;align-items:center;gap:.5rem;cursor:pointer;flex-shrink:0;transition:transform .2s;}
+.cat:hover{transform:translateY(-3px);}
+.cat-icon{width:64px;height:64px;border-radius:18px;background:white;border:2px solid var(--sand);display:flex;align-items:center;justify-content:center;font-size:1.8rem;transition:all .2s;box-shadow:var(--shadow-sm);}
+.cat:hover .cat-icon,.cat.on .cat-icon{border-color:var(--teal);background:var(--teal-pale);box-shadow:0 4px 18px rgba(43,191,170,.25);}
+.cat-name{font-size:.75rem;font-weight:700;color:var(--ink-mid);text-align:center;}
+.cat-count{font-size:.65rem;color:var(--muted);}
+
+/* ─── FILTER BAR ─── */
+.filter-bar{background:white;border-top:1px solid var(--sand);border-bottom:1px solid var(--sand);padding:.75rem 2rem;display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;}
+.filter-label{font-size:.78rem;font-weight:700;color:var(--muted);margin-right:4px;}
+.sort-sel{margin-left:auto;border:1.5px solid var(--sand);background:var(--sky);padding:5px 12px;border-radius:20px;font-family:'Sora',sans-serif;font-size:.78rem;color:var(--ink);outline:none;cursor:pointer;}
+
+/* ─── SPONSOR BANNER ─── */
+.sponsor-wrap{padding:.8rem 2rem;}
+.sponsor-banner{border-radius:16px;overflow:hidden;position:relative;cursor:pointer;box-shadow:var(--shadow-md);transition:transform .2s,box-shadow .2s;}
+.sponsor-banner:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.sponsor-inner{background:linear-gradient(120deg,#0B3D55 0%,#0E5570 60%,#117089 100%);padding:1.3rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;}
+.sp-label{position:absolute;top:10px;left:12px;background:rgba(0,0,0,.4);color:rgba(255,255,255,.8);font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px;}
+.sp-brand{display:flex;align-items:center;gap:14px;}
+.sp-logo{width:50px;height:50px;border-radius:12px;background:white;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
+.sp-name{font-size:.7rem;color:rgba(255,255,255,.55);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.sp-headline{font-size:1.2rem;font-weight:700;color:white;margin-top:2px;line-height:1.25;}
+.sp-sub{font-size:.78rem;color:rgba(255,255,255,.65);margin-top:3px;}
+.sp-cta{background:white;color:#0B3D55;border:none;padding:10px 22px;border-radius:22px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.sp-cta:hover{background:var(--teal-pale);}
+
+/* ─── LISTINGS SECTION ─── */
+.listings-wrap{padding:1.2rem 2rem 3rem;}
+.listings-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;}
+.listings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.2rem;}
+
+/* ─── LISTING CARD ─── */
+.lcard{background:white;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-sm);cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative;}
+.lcard:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg);}
+.lcard-img{height:180px;background:var(--teal-pale);display:flex;align-items:center;justify-content:center;font-size:4rem;position:relative;overflow:hidden;}
+.lcard-img .save-btn{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;opacity:0;}
+.lcard:hover .save-btn{opacity:1;}
+.save-btn.saved{opacity:1;background:white;}
+.save-btn svg{transition:fill .15s;}
+.save-btn.saved svg{fill:var(--red);}
+.lcard-badges{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:4px;}
+.lcard-body{padding:.85rem .95rem;}
+.lcard-title{font-weight:700;font-size:.92rem;color:var(--ink);margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lcard-price{font-size:1.1rem;font-weight:800;color:var(--teal-d);letter-spacing:-.3px;}
+.lcard-price .orig{font-size:.75rem;color:var(--muted);text-decoration:line-through;font-weight:400;margin-left:4px;}
+.lcard-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:.45rem;}
+.lcard-tag{font-size:.65rem;font-weight:600;padding:2px 7px;border-radius:7px;background:var(--sky);color:var(--muted);}
+.lcard-tag.new{background:#E8F8F5;color:#1A8070;}
+.lcard-tag.good{background:#FEF9EC;color:#9A6800;}
+.lcard-views{font-size:.68rem;color:var(--muted);margin-top:.4rem;display:flex;align-items:center;gap:3px;}
+.lcard-footer{display:flex;align-items:center;justify-content:space-between;padding:.65rem .95rem;border-top:1px solid var(--sand);background:var(--sky);}
+.seller-row{display:flex;align-items:center;gap:7px;}
+.seller-av{width:26px;height:26px;border-radius:50%;background:var(--teal-pale);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:var(--teal-d);flex-shrink:0;}
+.seller-n{font-size:.75rem;font-weight:700;color:var(--ink);}
+.seller-r{font-size:.65rem;color:var(--gold);}
+.lcard-actions{display:flex;gap:5px;}
+
+/* ─── SPONSOR CARD ─── */
+.lcard.sp-card{border:2px solid var(--teal-mid);background:linear-gradient(145deg,#F0FAF8,var(--teal-pale));}
+.lcard.sp-card .lcard-img{background:linear-gradient(135deg,#C8EDE9,var(--teal-mid));}
+
+/* ─── MAKE OFFER MODAL ─── */
+/* ─── INLINE MESSAGE PREVIEW ─── */
+.msg-preview{background:var(--sky);border-radius:12px;padding:.7rem .9rem;margin-top:.5rem;font-size:.78rem;color:var(--muted);border:1px solid var(--sand);}
+
+/* ─── TRUST / HOW IT WORKS ─── */
+.how-section{background:white;padding:3rem 2rem;border-top:1px solid var(--sand);}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem;max-width:900px;margin:1.5rem auto 0;}
+.how-card{text-align:center;padding:1.5rem 1rem;}
+.how-icon{width:60px;height:60px;border-radius:18px;background:var(--teal-pale);display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto .9rem;}
+.how-title{font-weight:700;font-size:.95rem;margin-bottom:.4rem;}
+.how-desc{font-size:.8rem;color:var(--muted);line-height:1.6;}
+
+/* ─── REVIEWS ─── */
+.reviews-section{padding:3rem 2rem;background:var(--sky);}
+.reviews-scroll{display:flex;gap:1rem;overflow-x:auto;padding-bottom:.5rem;scrollbar-width:none;}
+.reviews-scroll::-webkit-scrollbar{display:none;}
+.rcard{background:white;border-radius:16px;padding:1.3rem;min-width:265px;flex-shrink:0;border:1px solid var(--sand);box-shadow:var(--shadow-sm);}
+.r-stars{color:var(--gold);font-size:.95rem;margin-bottom:.5rem;}
+.r-text{font-size:.83rem;color:var(--ink);line-height:1.65;margin-bottom:.9rem;}
+.r-auth{display:flex;align-items:center;gap:9px;}
+.r-av{width:34px;height:34px;border-radius:50%;background:var(--teal-pale);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:var(--teal-d);}
+.r-name{font-size:.82rem;font-weight:700;}
+.r-role{font-size:.7rem;color:var(--muted);}
+
+/* ─── BRANDS STRIP ─── */
+.brands-strip{background:white;border-top:1px solid var(--sand);border-bottom:1px solid var(--sand);padding:1.3rem 2rem;}
+.brands-label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:1rem;}
+.brands-row{display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;}
+.brand-item{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;opacity:.65;transition:all .2s;}
+.brand-item:hover{opacity:1;transform:translateY(-2px);}
+.brand-circle{width:52px;height:52px;border-radius:14px;background:var(--sky);border:1.5px solid var(--sand);display:flex;align-items:center;justify-content:center;font-size:1.6rem;}
+.brand-n{font-size:.68rem;font-weight:700;color:var(--muted);}
+
+/* ─── ADVERTISE ─── */
+.adv-section{background:var(--sky);padding:3rem 2rem;}
+.adv-inner{max-width:880px;margin:0 auto;background:white;border-radius:22px;overflow:hidden;box-shadow:var(--shadow-md);display:grid;grid-template-columns:1fr 1fr;}
+.adv-left{background:linear-gradient(145deg,#0B2233 0%,#0E3D55 100%);padding:2.5rem 2rem;}
+.adv-left h2{font-size:1.7rem;font-weight:800;color:white;line-height:1.2;margin-bottom:.7rem;letter-spacing:-.3px;}
+.adv-left h2 em{font-style:normal;color:#6EE7DA;}
+.adv-left p{font-size:.85rem;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:1.8rem;}
+.adv-stats{display:flex;gap:1.5rem;flex-wrap:wrap;}
+.adv-stat-n{font-size:1.6rem;font-weight:800;color:white;letter-spacing:-.3px;}
+.adv-stat-l{font-size:.68rem;color:rgba(255,255,255,.5);margin-top:1px;}
+.adv-right{padding:2.5rem 2rem;}
+.adv-right h3{font-size:1.1rem;font-weight:800;margin-bottom:1.3rem;}
+.adv-pkg{border:1.5px solid var(--sand);border-radius:13px;padding:1rem 1.1rem;margin-bottom:.8rem;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s;}
+.adv-pkg:hover,.adv-pkg.on{border-color:var(--teal);background:var(--teal-pale);}
+.adv-pkg-ic{font-size:1.5rem;flex-shrink:0;}
+.adv-pkg-name{font-weight:700;font-size:.88rem;}
+.adv-pkg-desc{font-size:.73rem;color:var(--muted);margin-top:2px;}
+.adv-pkg-price{margin-left:auto;font-size:1rem;font-weight:800;color:var(--teal-d);white-space:nowrap;text-align:right;flex-shrink:0;}
+.adv-pkg-price span{display:block;font-size:.65rem;color:var(--muted);font-weight:400;}
+
+/* ─── PRICING ─── */
+.pricing-section{background:linear-gradient(145deg,#0A1E2C 0%,#0D2F42 100%);padding:4rem 2rem;}
+.pricing-head{text-align:center;margin-bottom:2.5rem;}
+.pricing-head h2{font-size:2rem;font-weight:800;color:white;letter-spacing:-.4px;margin-bottom:.5rem;}
+.pricing-head p{color:rgba(255,255,255,.5);font-size:.92rem;}
+.plans{display:flex;gap:1.3rem;max-width:680px;margin:0 auto;flex-wrap:wrap;justify-content:center;}
+.plan{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:20px;padding:1.8rem;flex:1;min-width:230px;position:relative;transition:transform .2s;}
+.plan:hover{transform:translateY(-4px);}
+.plan.pro{background:rgba(43,191,170,.12);border-color:var(--teal);}
+.plan-pop{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--teal),var(--teal-d));color:white;font-size:.68rem;font-weight:800;padding:3px 14px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.plan-tier{font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.5rem;}
+.plan-cost{font-size:2.2rem;font-weight:800;color:white;letter-spacing:-.5px;}
+.plan-cost sub{font-size:.82rem;font-weight:400;color:rgba(255,255,255,.4);font-family:'Sora',sans-serif;}
+.plan-perks{list-style:none;margin:1.2rem 0 1.4rem;}
+.plan-perks li{font-size:.82rem;color:rgba(255,255,255,.72);padding:4px 0;display:flex;gap:8px;}
+.plan-perks li::before{content:'✓';color:#6EE7DA;font-weight:700;flex-shrink:0;}
+.plan-btn{width:100%;padding:10px;border-radius:25px;border:none;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .15s;}
+.plan-btn.ghost{background:rgba(255,255,255,.1);color:white;}
+.plan-btn.ghost:hover{background:rgba(255,255,255,.18);}
+.plan-btn.solid{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:white;}
+.plan-btn.solid:hover{opacity:.9;}
+.boost-note{text-align:center;margin-top:1.5rem;font-size:.78rem;color:rgba(255,255,255,.35);}
+.boost-note strong{color:var(--gold);}
+
+/* ─── FOOTER ─── */
+footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
+.footer-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:2rem;margin-bottom:2rem;padding-bottom:2rem;border-bottom:1px solid rgba(255,255,255,.08);}
+.footer-brand p{font-size:.8rem;margin-top:.5rem;max-width:200px;line-height:1.6;}
+.footer-col h4{color:rgba(255,255,255,.75);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:.75rem;}
+.footer-col a{display:block;font-size:.8rem;color:rgba(255,255,255,.4);text-decoration:none;margin-bottom:.4rem;transition:color .15s;}
+.footer-col a:hover{color:#6EE7DA;}
+.footer-bottom{font-size:.75rem;text-align:center;}
+.footer-logo-name{font-size:1.4rem;font-weight:800;color:white;letter-spacing:-.3px;}
+.footer-logo-name span{color:var(--teal);}
+
+/* ─── MODALS ─── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,15,22,.6);z-index:600;align-items:center;justify-content:center;padding:1.5rem;backdrop-filter:blur(5px);}
+.overlay.open{display:flex;}
+.modal{background:white;border-radius:22px;padding:2rem;max-width:480px;width:100%;max-height:92vh;overflow-y:auto;position:relative;}
+.modal-close{position:absolute;top:15px;right:15px;width:30px;height:30px;border-radius:50%;background:var(--sky);border:none;font-size:1rem;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;}
+.modal h2{font-size:1.5rem;font-weight:800;margin-bottom:.25rem;letter-spacing:-.3px;}
+.modal-sub{font-size:.83rem;color:var(--muted);margin-bottom:1.5rem;}
+.fg{margin-bottom:1rem;}
+.fg label{display:block;font-size:.78rem;font-weight:700;margin-bottom:.3rem;}
+.fg input,.fg select,.fg textarea{width:100%;padding:10px 13px;border:1.5px solid var(--sand);border-radius:11px;font-family:'Sora',sans-serif;font-size:.88rem;outline:none;background:var(--sky);color:var(--ink);transition:border .2s,box-shadow .2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(43,191,170,.12);}
+.fg textarea{resize:vertical;min-height:80px;}
+.fg-2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
+.upload-zone{border:2px dashed var(--teal-mid);border-radius:12px;padding:1.4rem;text-align:center;cursor:pointer;color:var(--muted);font-size:.82rem;transition:all .2s;}
+.upload-zone:hover{border-color:var(--teal);background:var(--teal-pale);}
+.upload-zone .uz-ic{font-size:2rem;margin-bottom:.4rem;}
+.plan-pick{display:flex;gap:.7rem;margin-top:.3rem;}
+.plan-opt{flex:1;border:1.5px solid var(--sand);border-radius:11px;padding:.8rem;cursor:pointer;text-align:center;transition:all .15s;}
+.plan-opt:hover,.plan-opt.on{border-color:var(--teal);background:var(--teal-pale);}
+.plan-opt .po-n{font-weight:700;font-size:.85rem;}
+.plan-opt .po-p{font-size:.75rem;color:var(--teal-d);font-weight:700;margin-top:2px;}
+.plan-opt .po-d{font-size:.67rem;color:var(--muted);margin-top:1px;}
+.modal-cta{width:100%;padding:13px;border-radius:25px;background:linear-gradient(135deg,var(--teal),var(--teal-d));color:white;border:none;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:.5rem;box-shadow:0 4px 16px rgba(43,191,170,.3);transition:opacity .15s;}
+.modal-cta:hover{opacity:.9;}
+.divider{border:none;border-top:1px solid var(--sand);margin:1.1rem 0;}
+.switch{text-align:center;font-size:.82rem;color:var(--muted);margin-top:.7rem;}
+.switch span{color:var(--teal);font-weight:700;cursor:pointer;}
+
+/* ─── CHAT PANEL ─── */
+.chat-fab{position:fixed;bottom:24px;right:24px;z-index:400;width:52px;height:52px;background:linear-gradient(135deg,var(--teal),var(--teal-d));border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(43,191,170,.5);transition:transform .2s;}
+.chat-fab:hover{transform:scale(1.08);}
+.chat-notif{position:absolute;top:-3px;right:-3px;width:18px;height:18px;background:var(--red);border-radius:50%;border:2px solid white;font-size:.6rem;font-weight:800;color:white;display:flex;align-items:center;justify-content:center;}
+.chat-panel{position:fixed;bottom:88px;right:24px;z-index:400;width:300px;background:white;border-radius:18px;box-shadow:var(--shadow-lg);border:1px solid var(--sand);overflow:hidden;display:none;}
+.chat-panel.open{display:block;}
+.chat-header{background:linear-gradient(135deg,var(--teal),var(--teal-d));padding:.9rem 1.1rem;display:flex;align-items:center;gap:10px;}
+.chat-header-icon{font-size:1.2rem;}
+.chat-header-title{font-size:.9rem;font-weight:700;color:white;}
+.chat-header-sub{font-size:.7rem;color:rgba(255,255,255,.7);}
+.chat-list{padding:.6rem;}
+.chat-item{display:flex;align-items:center;gap:9px;padding:.6rem .5rem;border-radius:10px;cursor:pointer;transition:background .15s;}
+.chat-item:hover{background:var(--sky);}
+.chat-av{width:36px;height:36px;border-radius:50%;background:var(--teal-pale);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:var(--teal-d);flex-shrink:0;position:relative;}
+.chat-online{position:absolute;bottom:0;right:0;width:10px;height:10px;background:var(--green);border:2px solid white;border-radius:50%;}
+.chat-name{font-size:.82rem;font-weight:700;}
+.chat-preview{font-size:.72rem;color:var(--muted);}
+.chat-time{font-size:.65rem;color:var(--muted);margin-left:auto;flex-shrink:0;}
+.unread-dot{width:8px;height:8px;background:var(--teal);border-radius:50%;flex-shrink:0;}
+
+/* ─── BOTTOM NAV (mobile) ─── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--sand);padding:.6rem 0;z-index:450;box-shadow:0 -4px 16px rgba(15,31,45,.08);}
+.bottom-nav-inner{display:flex;justify-content:space-around;}
+.bnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:.3rem .8rem;border-radius:10px;transition:all .15s;}
+.bnav-item.on{color:var(--teal);}
+.bnav-label{font-size:.62rem;font-weight:600;}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:900px){
+  .hero-grid{grid-template-columns:1fr;}
+  .hero-right{display:none;}
+  .adv-inner{grid-template-columns:1fr;}
+}
+@media(max-width:640px){
+  .nav-search,.nav-loc{display:none;}
+  nav{padding:0 1rem;gap:.6rem;}
+  .listings-grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));}
+  .cat-section,.filter-bar,.listings-wrap,.reviews-section,.how-section{padding-left:1rem;padding-right:1rem;}
+  .sponsor-wrap{padding:0.8rem 1rem;}
+  .bottom-nav{display:block;}
+  body{padding-bottom:64px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav class="nav">
+  <a class="logo" href="#">
+    <div class="logo-icon">ج</div>
+    <div>
+      <div class="logo-name">Jari</div>
+      <div class="logo-sub" style="font-family:'Tajawal',sans-serif;">جاري</div>
+    </div>
+  </a>
+  <div class="nav-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="navSearch" placeholder="Search items, services, brands…" onkeydown="if(event.key==='Enter')doSearch()"/>
+  </div>
+  <div class="nav-loc"><span class="pulse"></span><span id="distLabel">Al-Rawdah, Jeddah</span></div>
+  <div class="nav-spacer"></div>
+  <select class="lang-btn" id="langBtn" onchange="setLang(this.value)">
+    <option value="en">🌐 EN</option>
+    <option value="ar">عربي</option>
+    <option value="ru" selected>Рус</option>
+  </select>
+  <div class="nav-icon-btn" title="Saved" onclick="openModal('savedModal')">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+  </div>
+  <div class="nav-icon-btn" title="Messages" onclick="toggleChat()">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <div class="notif-dot"></div>
+  </div>
+  <button class="btn btn-ghost" onclick="openModal('loginModal')">Sign In</button>
+  <button class="btn btn-primary" onclick="openModal('sellModal')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+    Post Item
+  </button>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-left">
+      <div class="hero-pill"><span class="dot"></span> Работает · Район Аль-Рауда</div>
+      <h1>Покупай, продавай &<br><em>находи</em> рядом</h1>
+      <p class="hero-sub">Умный местный рынок — находи проверенных соседей, продающих всё что угодно: электронику, одежду, услуги и многое другое. Всё в твоём районе.</p>
+      <div class="hero-search">
+        <input type="text" placeholder="Что ищешь?" id="heroSearch"/>
+        <select id="heroCategory">
+          <option>Все категории</option>
+          <option>Электроника</option>
+          <option>Одежда</option>
+          <option>Мебель</option>
+          <option>Автомобили</option>
+          <option>Услуги</option>
+          <option>Спорт</option>
+        </select>
+        <button onclick="doSearch()">Найти</button>
+      </div>
+      <div class="hero-tags">
+        <span class="hero-tag" onclick="quickSearch('electronics')">📱 Электроника</span>
+        <span class="hero-tag" onclick="quickSearch('furniture')">🛋️ Мебель</span>
+        <span class="hero-tag" onclick="quickSearch('clothes')">👗 Одежда</span>
+        <span class="hero-tag" onclick="quickSearch('cars')">🚗 Авто</span>
+        <span class="hero-tag" onclick="quickSearch('service')">🤝 Услуги</span>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-card">
+        <div class="hc-img">📱</div>
+        <div>
+          <div class="hc-title">iPhone 14 Pro, 256GB</div>
+          <div class="hc-price">3 200 SAR</div>
+          <div class="hc-meta">📍 Аль-Рауда · 1 час назад</div>
+        </div>
+        <div class="hc-right"><div class="hc-tag">Как новый</div></div>
+      </div>
+      <div class="hero-card">
+        <div class="hc-img">🛋️</div>
+        <div>
+          <div class="hc-title">Диван IKEA, 3-местный</div>
+          <div class="hc-price">850 SAR</div>
+          <div class="hc-meta">📍 Аль-Рауда · 3 часа назад</div>
+        </div>
+        <div class="hc-right"><div class="hc-tag">Хорошее</div></div>
+      </div>
+      <div class="hero-card">
+        <div class="hc-img">🔧</div>
+        <div>
+          <div class="hc-title">Ремонт техники на дому</div>
+          <div class="hc-price">от 50 SAR</div>
+          <div class="hc-meta">📍 Аль-Рауда · Сегодня</div>
+        </div>
+        <div class="hc-right"><div class="hc-tag">Услуга</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS ─── -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-n">340+</div><div class="stat-l">Active Listings</div></div>
+  <div class="stat"><div class="stat-n">180</div><div class="stat-l">Verified Sellers</div></div>
+  <div class="stat"><div class="stat-n">4.9★</div><div class="stat-l">Avg. Rating</div></div>
+  <div class="stat"><div class="stat-n">&lt;1 Day</div><div class="stat-l">Avg. Sale Time</div></div>
+  <div class="stat"><div class="stat-n">0 SAR</div><div class="stat-l">Listing Fee</div></div>
+</div>
+
+<!-- ─── TRUST BAR ─── -->
+<div class="trust-bar">
+  <div class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Verified Sellers</div>
+  <div class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Hyperlocal Only</div>
+  <div class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> In-App Messaging</div>
+  <div class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Make Offer Feature</div>
+  <div class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Save & Watchlist</div>
+  <div class="trust-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Safe Payments</div>
+</div>
+
+<!-- ─── CATEGORIES ─── -->
+<section class="cat-section">
+  <div class="sec-head"><div class="sec-title">Browse Categories</div><div class="sec-link">All categories →</div></div>
+  <div class="cats" id="catsRow">
+    <!-- Rendered dynamically by JS -->
+  </div>
+</section>
+
+<!-- ─── FILTERS ─── -->
+<div class="filter-bar">
+  <span class="filter-label">Condition:</span>
+  <div class="chip on" onclick="toggleChip(this)">All</div>
+  <div class="chip" onclick="toggleChip(this)">Like New</div>
+  <div class="chip" onclick="toggleChip(this)">Good</div>
+  <div class="chip" onclick="toggleChip(this)">Fair</div>
+  <div class="chip" onclick="toggleChip(this)">⭐ Featured</div>
+  <div class="chip" onclick="toggleChip(this)">💰 Under 100 SAR</div>
+  <div class="chip" onclick="toggleChip(this)">🔥 Hot Deals</div>
+  <div class="chip" onclick="toggleChip(this)">🆕 Just Posted</div>
+  <select class="sort-sel">
+    <option>Sort: Newest First</option>
+    <option>Price: Low → High</option>
+    <option>Price: High → Low</option>
+    <option>Most Viewed</option>
+    <option>Top Rated Sellers</option>
+    <option>Nearest First</option>
+  </select>
+</div>
+
+<!-- ─── SPONSOR BANNER ─── -->
+<div class="sponsor-wrap">
+  <div class="sponsor-banner">
+    <div class="sp-label">Sponsored</div>
+    <div class="sponsor-inner">
+      <div class="sp-brand">
+        <div class="sp-logo">📱</div>
+        <div>
+          <div class="sp-name">Samsung · Официальный партнёр</div>
+          <div class="sp-headline">Новый Galaxy S25 Ultra<br>уже в продаже</div>
+          <div class="sp-sub">У дилеров рядом с Аль-Рауда · Рассрочка 0%</div>
+        </div>
+      </div>
+      <button class="sp-cta">Смотреть →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── LISTINGS ─── -->
+<div class="listings-wrap">
+  <div class="listings-head">
+    <div class="sec-title">Latest Near You</div>
+    <div class="sec-link" id="listCount">9 listings</div>
+  </div>
+  <div class="listings-grid" id="listGrid"></div>
+</div>
+
+<!-- ─── HOW IT WORKS ─── -->
+<section class="how-section">
+  <div class="sec-head" style="justify-content:center;text-align:center;flex-direction:column;gap:.4rem;">
+    <div class="sec-title">How Jari Works</div>
+    <div style="font-size:.85rem;color:var(--muted);">Simple, safe, and local</div>
+  </div>
+  <div class="how-grid">
+    <div class="how-card"><div class="how-icon">📸</div><div class="how-title">Post in Seconds</div><div class="how-desc">Snap a photo, set your price, pick a category — your listing goes live instantly in your district.</div></div>
+    <div class="how-card"><div class="how-icon">💬</div><div class="how-title">Chat & Negotiate</div><div class="how-desc">Message sellers directly, make offers, and negotiate a fair price — all without leaving the app.</div></div>
+    <div class="how-card"><div class="how-icon">📍</div><div class="how-title">Meet Nearby</div><div class="how-desc">Everything is hyperlocal — arrange pickup or delivery within your neighborhood in minutes.</div></div>
+    <div class="how-card"><div class="how-icon">⭐</div><div class="how-title">Rate & Review</div><div class="how-desc">After every deal, leave a rating. Build your reputation and discover trusted sellers.</div></div>
+  </div>
+</section>
+
+<!-- ─── REVIEWS ─── -->
+<section class="reviews-section">
+  <div class="sec-head"><div class="sec-title">What the Neighborhood Says</div><div class="sec-link">All reviews</div></div>
+  <div class="reviews-scroll">
+    <div class="rcard"><div class="r-stars">★★★★★</div><div class="r-text">«Продал телефон за 2 часа! Покупатель написал в чат прямо на сайте. Удобнее, чем любой другой сервис.»</div><div class="r-auth"><div class="r-av">خا</div><div><div class="r-name">Khalid Al-Rashidi</div><div class="r-role">Продавец · Аль-Рауда</div></div></div></div>
+    <div class="rcard"><div class="r-stars">★★★★★</div><div class="r-text">«Нашла диван по отличной цене в 5 минутах от дома. Функция «Предложить цену» помогла договориться!»</div><div class="r-auth"><div class="r-av">سا</div><div><div class="r-name">Sara H.</div><div class="r-role">Покупатель · Аль-Рауда</div></div></div></div>
+    <div class="rcard"><div class="r-stars">★★★★☆</div><div class="r-text">«Отличная идея — только свой район. Больше не надо ехать через весь город. Всё рядом!»</div><div class="r-auth"><div class="r-av">نو</div><div><div class="r-name">Nour K.</div><div class="r-role">Покупатель</div></div></div></div>
+    <div class="rcard"><div class="r-stars">★★★★★</div><div class="r-text">«Мой магазин электроники получает новых клиентов каждую неделю. Подписка Pro окупается с первой продажи.»</div><div class="r-auth"><div class="r-av">تك</div><div><div class="r-name">Tech Store Jeddah</div><div class="r-role">Бизнес · Pro продавец</div></div></div></div>
+    <div class="rcard"><div class="r-stars">★★★★★</div><div class="r-text">«Предложил цену на машину — хозяин принял через 10 минут. Функция торга работает отлично!»</div><div class="r-auth"><div class="r-av">رن</div><div><div class="r-name">Rana M.</div><div class="r-role">Покупатель</div></div></div></div>
+  </div>
+</section>
+
+<!-- ─── BRANDS ─── -->
+<div class="brands-strip">
+  <div class="brands-label">Партнёры и проверенные продавцы</div>
+  <div class="brands-row">
+    <div class="brand-item"><div class="brand-circle">📱</div><div class="brand-n">Samsung</div></div>
+    <div class="brand-item"><div class="brand-circle">🍎</div><div class="brand-n">Apple</div></div>
+    <div class="brand-item"><div class="brand-circle">👟</div><div class="brand-n">Nike</div></div>
+    <div class="brand-item"><div class="brand-circle">🛋️</div><div class="brand-n">IKEA</div></div>
+    <div class="brand-item"><div class="brand-circle">🚗</div><div class="brand-n">Toyota</div></div>
+    <div class="brand-item"><div class="brand-circle">👗</div><div class="brand-n">Zara</div></div>
+  </div>
+</div>
+
+<!-- ─── ADVERTISE ─── -->
+<section class="adv-section">
+  <div class="adv-inner">
+    <div class="adv-left">
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.7rem;">For Brands & Businesses</div>
+      <h2>Reach <em>New Parents</em><br>In Their Neighborhood</h2>
+      <p>Every user on Jari is an active parent buying for a newborn. Zero wasted impressions — your ad reaches the most relevant audience in Saudi Arabia.</p>
+      <div class="adv-stats">
+        <div><div class="adv-stat-n">180+</div><div class="adv-stat-l">Active parents / mo</div></div>
+        <div><div class="adv-stat-n">94%</div><div class="adv-stat-l">Ad click-through</div></div>
+        <div><div class="adv-stat-n">1 District</div><div class="adv-stat-l">Zero waste</div></div>
+      </div>
+    </div>
+    <div class="adv-right">
+      <h3>Choose Your Package</h3>
+      <div class="adv-pkg on" onclick="selPkg(this)"><div class="adv-pkg-ic">📌</div><div><div class="adv-pkg-name">Banner Ad</div><div class="adv-pkg-desc">Full-width between listings</div></div><div class="adv-pkg-price">299 SAR<span>/month</span></div></div>
+      <div class="adv-pkg" onclick="selPkg(this)"><div class="adv-pkg-ic">🃏</div><div><div class="adv-pkg-name">Sponsored Card</div><div class="adv-pkg-desc">Native listing in search grid</div></div><div class="adv-pkg-price">199 SAR<span>/month</span></div></div>
+      <div class="adv-pkg" onclick="selPkg(this)"><div class="adv-pkg-ic">🏆</div><div><div class="adv-pkg-name">Category Owner</div><div class="adv-pkg-desc">Own an entire category page</div></div><div class="adv-pkg-price">499 SAR<span>/month</span></div></div>
+      <button class="modal-cta" style="margin-top:1rem;">Get in Touch →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRICING ─── -->
+<section class="pricing-section">
+  <div class="pricing-head"><h2>Sell More With Jari</h2><p>Start free — upgrade when you're ready to grow</p></div>
+  <div class="plans">
+    <div class="plan">
+      <div class="plan-tier">Basic</div>
+      <div class="plan-cost">Free <sub>always</sub></div>
+      <ul class="plan-perks"><li>3 active listings</li><li>In-app messaging</li><li>Seller profile page</li><li>Standard placement</li><li>WhatsApp contact button</li></ul>
+      <button class="plan-btn ghost" onclick="openModal('sellModal')">Start Free</button>
+    </div>
+    <div class="plan pro">
+      <div class="plan-pop">Most Popular</div>
+      <div class="plan-tier">Pro Seller</div>
+      <div class="plan-cost">49 SAR <sub>/ month</sub></div>
+      <ul class="plan-perks"><li>Unlimited listings</li><li>1 free featured boost / mo</li><li>Verified ✓ badge</li><li>Priority in search</li><li>Analytics dashboard</li><li>Make Offer feature</li></ul>
+      <button class="plan-btn solid" onclick="openModal('sellModal')">Go Pro</button>
+    </div>
+  </div>
+  <p class="boost-note">Need a one-off boost? <strong>Featured listings — 15 SAR each</strong></p>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-logo-name">Jari <span>جاري</span></div>
+      <p>Your neighbor's marketplace — starting with babies, growing with your community.</p>
+    </div>
+    <div class="footer-col"><h4>Marketplace</h4><a href="#">Browse Listings</a><a href="#">Post an Item</a><a href="#">Categories</a><a href="#">Featured Sellers</a></div>
+    <div class="footer-col"><h4>Sellers</h4><a href="#">How it Works</a><a href="#">Pricing</a><a href="#">Pro Benefits</a><a href="#">Safety Tips</a></div>
+    <div class="footer-col"><h4>Brands</h4><a href="#">Advertise</a><a href="#">Packages</a><a href="#">Analytics</a><a href="#">Partner With Us</a></div>
+    <div class="footer-col"><h4>Company</h4><a href="#">About</a><a href="#">Contact</a><a href="#">Privacy</a><a href="#">Terms</a></div>
+  </div>
+  <div class="footer-bottom">© 2025 Jari جاري — Al-Rawdah District, Jeddah · All rights reserved.</div>
+</footer>
+
+<!-- ─── CHAT FAB ─── -->
+<button class="chat-fab" onclick="toggleChat()">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span class="chat-notif">2</span>
+</button>
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">
+    <div class="chat-header-icon">💬</div>
+    <div><div class="chat-header-title">Messages</div><div class="chat-header-sub">2 unread conversations</div></div>
+  </div>
+  <div class="chat-list">
+    <div class="chat-item"><div class="chat-av">أم<div class="chat-online"></div></div><div><div class="chat-name">Um Khalid</div><div class="chat-preview">Is the stroller still available?</div></div><div class="chat-time">2m</div><div class="unread-dot"></div></div>
+    <div class="chat-item"><div class="chat-av">سا</div><div><div class="chat-name">Sara H.</div><div class="chat-preview">Can you do 70 SAR for the bundle?</div></div><div class="chat-time">1h</div><div class="unread-dot"></div></div>
+    <div class="chat-item"><div class="chat-av">نو<div class="chat-online"></div></div><div><div class="chat-name">Nour K.</div><div class="chat-preview">Thank you! Great item 🙏</div></div><div class="chat-time">3h</div></div>
+  </div>
+</div>
+
+<!-- ─── BOTTOM NAV ─── -->
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <div class="bnav-item on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><div class="bnav-label">Home</div></div>
+    <div class="bnav-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><div class="bnav-label">Search</div></div>
+    <div class="bnav-item" onclick="openModal('sellModal')"><div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-d));display:flex;align-items:center;justify-content:center;margin-top:-10px;box-shadow:0 4px 16px rgba(43,191,170,.5);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div><div class="bnav-label">Sell</div></div>
+    <div class="bnav-item" onclick="toggleChat()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div class="bnav-label">Chat</div></div>
+    <div class="bnav-item" onclick="openModal('loginModal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div class="bnav-label">Profile</div></div>
+  </div>
+</div>
+
+<!-- ─── SELL MODAL ─── -->
+<div class="overlay" id="sellModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('sellModal')">✕</button>
+    <h2>Post an Item</h2>
+    <p class="modal-sub">Go live in your neighborhood in 60 seconds.</p>
+    <div class="fg"><label>Title</label><input type="text" placeholder="e.g. Graco Stroller, barely used"/></div>
+    <div class="fg-2">
+      <div class="fg"><label>Category</label><select><option>Strollers</option><option>Clothing 0–3m</option><option>Clothing 3–6m</option><option>Furniture</option><option>Toys</option><option>Feeding</option><option>Safety</option><option>Services</option></select></div>
+      <div class="fg"><label>Condition</label><select><option>Like New</option><option>Good</option><option>Fair</option><option>Brand New</option></select></div>
+    </div>
+    <div class="fg-2">
+      <div class="fg"><label>Price (SAR)</label><input type="number" placeholder="150"/></div>
+      <div class="fg"><label>Negotiable?</label><select><option>Yes — accepts offers</option><option>Fixed price</option></select></div>
+    </div>
+    <div class="fg"><label>Description</label><textarea placeholder="Brand, age, condition details, any flaws…"></textarea></div>
+    <div class="fg"><label>Photos (up to 8)</label><div class="upload-zone"><div class="uz-ic">📷</div>Tap to upload photos</div></div>
+    <div class="fg"><label>WhatsApp (optional)</label><input type="tel" placeholder="+966 5X XXX XXXX"/></div>
+    <div class="divider"></div>
+    <div class="fg"><label>Listing Type</label>
+      <div class="plan-pick">
+        <div class="plan-opt on" onclick="pickPlan(this)"><div class="po-n">Standard</div><div class="po-p">Free</div><div class="po-d">Normal placement</div></div>
+        <div class="plan-opt" onclick="pickPlan(this)"><div class="po-n">⭐ Featured</div><div class="po-p">15 SAR</div><div class="po-d">Top of results</div></div>
+      </div>
+    </div>
+    <button class="modal-cta">Post Listing →</button>
+    <div class="switch">Have an account? <span onclick="closeModal('sellModal');openModal('loginModal')">Sign in</span></div>
+  </div>
+</div>
+
+<!-- ─── LOGIN MODAL ─── -->
+<div class="overlay" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('loginModal')">✕</button>
+    <h2>Welcome Back</h2>
+    <p class="modal-sub">Sign in to manage your listings and messages.</p>
+    <div class="fg"><label>Phone Number</label><input type="tel" placeholder="+966 5X XXX XXXX"/></div>
+    <div class="fg"><label>Password</label><input type="password" placeholder="••••••••"/></div>
+    <button class="modal-cta">Sign In →</button>
+    <div class="switch">New to Jari? <span onclick="closeModal('loginModal');openModal('sellModal')">Create free account</span></div>
+  </div>
+</div>
+
+<!-- ─── OFFER MODAL ─── -->
+<div class="overlay" id="offerModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('offerModal')">✕</button>
+    <h2>Make an Offer 🤝</h2>
+    <p class="modal-sub" id="offerItemName">Bugaboo Fox 3 Stroller · Listed at 850 SAR</p>
+    <div class="fg"><label>Your Offer (SAR)</label><input type="number" placeholder="700" id="offerAmount"/></div>
+    <div class="fg"><label>Message to Seller (optional)</label><textarea placeholder="Hi! I'm interested. Would you accept 700 SAR?"></textarea></div>
+    <div class="msg-preview">💡 Tip: Offers within 10–20% of the asking price are accepted fastest.</div>
+    <button class="modal-cta">Send Offer →</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   TRANSLATIONS — EN / AR / RU
+═══════════════════════════════════════════════ */
+const T = {
+  en: {
+    dir: 'ltr',
+    searchPlaceholder: 'Search items, services, brands…',
+    heroTitle: 'Buy, Sell &<br><em>Discover</em> Near You',
+    heroSub: 'The smartest local marketplace — find trusted neighbors selling anything, services, and more. All in your district.',
+    heroPill: 'Now live · Al-Rawdah District',
+    heroBtn1: 'Browse Listings', heroBtn2: 'Sell an Item →',
+    searchBtn: 'Search',
+    allCats: 'All Items',
+    browseLabel: 'Browse Categories',
+    latestLabel: 'Latest Near You',
+    condLabel: 'Condition:',
+    sortNewest: 'Sort: Newest First',
+    sortLow: 'Price: Low → High',
+    sortHigh: 'Price: High → Low',
+    sortViews: 'Most Viewed',
+    sortRated: 'Top Rated Sellers',
+    sortNear: 'Nearest First',
+    howTitle: 'How Jari Works',
+    howSub: 'Simple, safe, and local',
+    how1t: 'Post in Seconds', how1d: 'Snap a photo, set your price, pick a category — your listing goes live instantly.',
+    how2t: 'Chat & Negotiate', how2d: 'Message sellers directly, make offers, and agree on a price — all in one place.',
+    how3t: 'Meet Nearby', how3d: 'Everything is hyperlocal — arrange pickup or delivery within your neighborhood.',
+    how4t: 'Rate & Review', how4d: 'After every deal, leave a rating. Build trust and find the best sellers.',
+    reviewsTitle: 'What the Neighborhood Says',
+    pricingTitle: 'Sell More With Jari', pricingSub: 'Start free — upgrade when you\'re ready',
+    signIn: 'Sign In', postItem: 'Post Item',
+    postTitle: 'Post an Item', postSub: 'Go live in your neighborhood in 60 seconds.',
+    dist: 'Al-Rawdah, Jeddah',
+    negLabel: 'Negotiable', featureLabel: 'Featured', proLabel: 'Pro ✓', adLabel: 'Ad',
+    offerTitle: 'Make an Offer 🤝', offerTip: '💡 Tip: Offers within 10–20% of the asking price are accepted fastest.',
+    sendOffer: 'Send Offer →', postBtn: 'Post Listing →',
+    catNewCta: '＋ Suggest Category',
+    newCatTitle: 'Suggest a New Category', newCatSub: 'Don\'t see your category? Suggest it — popular ones get added!',
+    newCatLabel: 'Category Name', newCatEmoji: 'Pick an Emoji', newCatBtn: 'Submit Suggestion',
+    listedAt: 'Listed at', views: 'views',
+    msgs: 'Messages', unread: 'unread conversations',
+  },
+  ar: {
+    dir: 'rtl',
+    searchPlaceholder: 'ابحث عن منتجات، خدمات، ماركات…',
+    heroTitle: 'اشترِ، بِع &<br><em>اكتشف</em> بالقرب منك',
+    heroSub: 'أذكى سوق محلي — اعثر على جيران موثوقين يبيعون كل شيء في حيّك.',
+    heroPill: 'متاح الآن · حي الروضة',
+    heroBtn1: 'تصفح الإعلانات', heroBtn2: 'أضف إعلانك ←',
+    searchBtn: 'بحث',
+    allCats: 'جميع المنتجات',
+    browseLabel: 'تصفح الفئات',
+    latestLabel: 'أحدث الإعلانات قربك',
+    condLabel: 'الحالة:',
+    sortNewest: 'ترتيب: الأحدث أولاً',
+    sortLow: 'السعر: من الأقل',
+    sortHigh: 'السعر: من الأعلى',
+    sortViews: 'الأكثر مشاهدة',
+    sortRated: 'الأعلى تقييماً',
+    sortNear: 'الأقرب أولاً',
+    howTitle: 'كيف يعمل جاري',
+    howSub: 'بسيط، آمن، ومحلي',
+    how1t: 'انشر في ثوانٍ', how1d: 'التقط صورة، حدد سعرك، اختر الفئة — يُنشر إعلانك فوراً.',
+    how2t: 'تحدث وتفاوض', how2d: 'راسل البائعين مباشرة وقدم عروضك — كل شيء في مكان واحد.',
+    how3t: 'التقِ بالقرب', how3d: 'كل شيء محلي — رتّب الاستلام أو التوصيل في حيّك.',
+    how4t: 'قيّم وراجع', how4d: 'بعد كل صفقة، اترك تقييمك. ابنِ سمعتك وابحث عن أفضل البائعين.',
+    reviewsTitle: 'ماذا يقول الجيران',
+    pricingTitle: 'بِع أكثر مع جاري', pricingSub: 'ابدأ مجاناً — طور حسابك متى شئت',
+    signIn: 'تسجيل الدخول', postItem: 'أضف إعلاناً',
+    postTitle: 'أضف إعلاناً', postSub: 'انشر في حيّك خلال 60 ثانية.',
+    dist: 'الروضة، جدة',
+    negLabel: 'قابل للتفاوض', featureLabel: 'مميز', proLabel: 'برو ✓', adLabel: 'إعلان',
+    offerTitle: 'قدّم عرضاً 🤝', offerTip: '💡 نصيحة: العروض ضمن 10-20% من السعر تُقبل بشكل أسرع.',
+    sendOffer: 'أرسل العرض ←', postBtn: 'نشر الإعلان ←',
+    catNewCta: '＋ اقترح فئة',
+    newCatTitle: 'اقترح فئة جديدة', newCatSub: 'لم تجد فئتك؟ اقترحها — الفئات الشائعة تُضاف!',
+    newCatLabel: 'اسم الفئة', newCatEmoji: 'اختر رمزاً', newCatBtn: 'إرسال الاقتراح',
+    listedAt: 'معروض بـ', views: 'مشاهدة',
+    msgs: 'الرسائل', unread: 'محادثات غير مقروءة',
+  },
+  ru: {
+    dir: 'ltr',
+    searchPlaceholder: 'Поиск товаров, услуг, брендов…',
+    heroTitle: 'Купи, продай &<br><em>открывай</em> рядом',
+    heroSub: 'Умный локальный маркетплейс — найди проверенных соседей, которые продают всё что нужно, рядом с тобой.',
+    heroPill: 'Работаем · Район Аль-Рауда',
+    heroBtn1: 'Смотреть объявления', heroBtn2: 'Подать объявление →',
+    searchBtn: 'Найти',
+    allCats: 'Все товары',
+    browseLabel: 'Категории',
+    latestLabel: 'Последние рядом с тобой',
+    condLabel: 'Состояние:',
+    sortNewest: 'Сортировка: сначала новые',
+    sortLow: 'Цена: по возрастанию',
+    sortHigh: 'Цена: по убыванию',
+    sortViews: 'По просмотрам',
+    sortRated: 'Лучшие продавцы',
+    sortNear: 'Ближайшие',
+    howTitle: 'Как работает Jari',
+    howSub: 'Просто, безопасно, рядом',
+    how1t: 'Разместите за секунды', how1d: 'Сделайте фото, укажите цену, выберите категорию — объявление выйдет мгновенно.',
+    how2t: 'Общайтесь и торгуйтесь', how2d: 'Пишите продавцам напрямую, делайте предложения — всё в одном месте.',
+    how3t: 'Встречайтесь рядом', how3d: 'Всё гиперлокально — договоритесь о самовывозе или доставке в вашем районе.',
+    how4t: 'Оценивайте и отзывы', how4d: 'После каждой сделки оставляйте оценку. Стройте репутацию.',
+    reviewsTitle: 'Что говорят соседи',
+    pricingTitle: 'Продавайте больше с Jari', pricingSub: 'Начните бесплатно — улучшайте аккаунт когда готовы',
+    signIn: 'Войти', postItem: 'Разместить',
+    postTitle: 'Разместить объявление', postSub: 'Выйдите в эфир за 60 секунд.',
+    dist: 'Аль-Рауда, Джидда',
+    negLabel: 'Торг', featureLabel: 'Топ', proLabel: 'Про ✓', adLabel: 'Реклама',
+    offerTitle: 'Сделать предложение 🤝', offerTip: '💡 Совет: предложения в пределах 10–20% от цены принимаются быстрее.',
+    sendOffer: 'Отправить предложение →', postBtn: 'Опубликовать →',
+    catNewCta: '＋ Предложить категорию',
+    newCatTitle: 'Предложить новую категорию', newCatSub: 'Не нашли нужную категорию? Предложите — популярные добавляются!',
+    newCatLabel: 'Название категории', newCatEmoji: 'Выберите эмодзи', newCatBtn: 'Отправить',
+    listedAt: 'Цена', views: 'просм.',
+    msgs: 'Сообщения', unread: 'непрочитанных',
+  }
+};
+
+let lang = 'ru';
+
+/* ═══════════════════════════════════════════════
+   DYNAMIC CATEGORY SYSTEM
+   — seeded list, grows as sellers add items
+═══════════════════════════════════════════════ */
+const CAT_NAMES = {
+  all:       {en:'All Items',      ar:'جميع المنتجات', ru:'Все товары',    icon:'🛒'},
+  stroller:  {en:'Strollers',      ar:'عربات أطفال',   ru:'Коляски',       icon:'🛺'},
+  clothes:   {en:'Clothing',       ar:'ملابس',          ru:'Одежда',        icon:'👶'},
+  furniture: {en:'Furniture',      ar:'أثاث',           ru:'Мебель',        icon:'🛏️'},
+  toys:      {en:'Toys',           ar:'ألعاب',          ru:'Игрушки',       icon:'🧸'},
+  feeding:   {en:'Feeding',        ar:'تغذية',          ru:'Кормление',     icon:'🍼'},
+  safety:    {en:'Safety',         ar:'سلامة',          ru:'Безопасность',  icon:'🛡️'},
+  service:   {en:'Services',       ar:'خدمات',          ru:'Услуги',        icon:'🤝'},
+  health:    {en:'Health',         ar:'صحة',            ru:'Здоровье',      icon:'💊'},
+  electronics:{en:'Electronics',   ar:'إلكترونيات',     ru:'Электроника',   icon:'📱'},
+  books:     {en:'Books',          ar:'كتب',            ru:'Книги',         icon:'📚'},
+  sports:    {en:'Sports',         ar:'رياضة',          ru:'Спорт',         icon:'⚽'},
+  fashion:   {en:'Fashion',        ar:'أزياء',          ru:'Мода',          icon:'👗'},
+  homegarden:{en:'Home & Garden',  ar:'منزل وحديقة',    ru:'Дом и сад',     icon:'🏡'},
+  cars:      {en:'Cars & Parts',   ar:'سيارات وقطع',    ru:'Авто',          icon:'🚗'},
+  pets:      {en:'Pets',           ar:'حيوانات أليفة',  ru:'Питомцы',       icon:'🐾'},
+  art:       {en:'Art & Crafts',   ar:'فنون وحرف',      ru:'Искусство',     icon:'🎨'},
+};
+
+// Track which categories have listings (starts with seeded ones, grows dynamically)
+let activeCats = new Set(['all','electronics','fashion','furniture','cars','sports','service','health','homegarden','pets','books','art']);
+let currentCatFilter = 'all';
+
+function getCatCount(key) {
+  if (key === 'all') return listings.length;
+  return listings.filter(l => l.cat === key).length;
+}
+
+function renderCats() {
+  const row = document.getElementById('catsRow');
+  const t = T[lang];
+  let html = '';
+  activeCats.forEach(key => {
+    const def = CAT_NAMES[key];
+    if (!def) return;
+    const name = def[lang] || def.en;
+    const count = getCatCount(key);
+    const isOn = key === currentCatFilter;
+    html += `<div class="cat${isOn?' on':''}" onclick="filterCat(this,'${key}')">
+      <div class="cat-icon">${def.icon}</div>
+      <div class="cat-name">${name}</div>
+      <div class="cat-count">${count}</div>
+    </div>`;
+  });
+  // "Suggest Category" button
+  html += `<div class="cat" onclick="openModal('newCatModal')" title="${t.catNewCta}">
+    <div class="cat-icon" style="background:var(--teal-pale);border-color:var(--teal);border-style:dashed;">＋</div>
+    <div class="cat-name" style="color:var(--teal);">${t.catNewCta}</div>
+    <div class="cat-count"></div>
+  </div>`;
+  row.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════
+   LISTINGS DATA — open to any category
+═══════════════════════════════════════════════ */
+const WA_SVG=`<svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+const listings=[
+  {id:1,title:"iPhone 14 Pro, 256GB",price:3200,orig:null,cond:"Like New",cat:"electronics",emoji:"📱",seller:"Khalid M.",init:"خا",stars:"4.9★",featured:true,pro:true,views:87,neg:true},
+  {id:2,title:"Nike Air Max 270, р.42",price:180,orig:240,cond:"Like New",cat:"fashion",emoji:"👟",seller:"Sara H.",init:"سا",stars:"4.7★",featured:false,pro:false,views:34,neg:true},
+  {id:3,title:"Диван IKEA KLIPPAN",price:850,orig:null,cond:"Good",cat:"furniture",emoji:"🛋️",seller:"Amal Trading",init:"أم",stars:"5.0★",featured:true,pro:true,views:56,neg:false},
+  {id:4,title:"MacBook Air M2, 8GB",price:3800,orig:4500,cond:"Like New",cat:"electronics",emoji:"💻",seller:"Tech Store",init:"تك",stars:"4.8★",featured:true,pro:true,views:120,neg:true},
+  {id:5,title:"Велосипед горный, 26\"",price:600,orig:null,cond:"Good",cat:"sports",emoji:"🚴",seller:"Nora K.",init:"نو",stars:"4.6★",featured:false,pro:false,views:29,neg:true},
+  {id:6,title:"Ремонт кондиционеров",price:150,orig:null,cond:"Услуга",cat:"service",emoji:"❄️",seller:"Fix Masters",init:"في",stars:"4.9★",featured:true,pro:true,views:63,neg:false},
+  {id:7,title:"Toyota Camry 2019",price:52000,orig:null,cond:"Good",cat:"cars",emoji:"🚗",seller:"Cars Hub",init:"كا",stars:"4.5★",featured:true,pro:true,views:210,neg:true},
+  {id:8,title:"Платье Zara, р.S/M",price:95,orig:180,cond:"Like New",cat:"fashion",emoji:"👗",seller:"Rana M.",init:"را",stars:"4.4★",featured:false,pro:false,views:18,neg:true},
+];
+
+function sponsorCardHtml(t){
+  return`<div class="lcard sp-card">
+  <div class="lcard-img">🛺<div class="lcard-badges"><span class="badge badge-teal">${t.adLabel}</span></div></div>
+  <div class="lcard-body">
+    <div class="lcard-title">Graco Modes™ Travel System</div>
+    <div class="lcard-price">1,299 SAR</div>
+    <div class="lcard-tags"><span class="lcard-tag new">Brand New</span><span class="lcard-tag">🏪 Graco Store</span></div>
+    <div class="lcard-views">👁 ${t.adLabel} · Sponsored</div>
+  </div>
+  <div class="lcard-footer">
+    <div class="seller-row"><div class="seller-av" style="background:#E4F8F5;color:#1E9E8C;">G</div><div><div class="seller-n">Graco Official</div><div class="seller-r">★ Verified Brand</div></div></div>
+    <button class="btn btn-wa" onclick="event.stopPropagation()">${WA_SVG} Shop</button>
+  </div>
+</div>`;
+}
+
+let savedIds=new Set();
+
+function cardHtml(l){
+  const t = T[lang];
+  const isSaved=savedIds.has(l.id);
+  return`<div class="lcard" onclick="openOffer(${l.id},'${l.title}',${l.price})">
+  <div class="lcard-img">${l.emoji}
+    <button class="save-btn${isSaved?' saved':''}" onclick="event.stopPropagation();toggleSave(this,${l.id})">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="${isSaved?'#FF4D4F':'none'}" stroke="${isSaved?'#FF4D4F':'#555'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    </button>
+    <div class="lcard-badges">
+      ${l.featured?`<span class="badge badge-gold">⭐ ${t.featureLabel}</span>`:''}
+      ${l.pro?`<span class="badge badge-ink">${t.proLabel}</span>`:''}
+      ${l.neg?`<span class="badge badge-teal">${t.negLabel}</span>`:''}
+    </div>
+  </div>
+  <div class="lcard-body">
+    <div class="lcard-title">${l.title}</div>
+    <div class="lcard-price">${l.price.toLocaleString()} SAR${l.orig?`<span class="orig">${l.orig} SAR</span>`:''}</div>
+    <div class="lcard-tags">
+      <span class="lcard-tag ${l.cond==='Like New'?'new':'good'}">${l.cond}</span>
+      <span class="lcard-tag">📍 ${t.dist.split(',')[0]}</span>
+    </div>
+    <div class="lcard-views">👁 ${l.views} ${t.views} · Just now</div>
+  </div>
+  <div class="lcard-footer">
+    <div class="seller-row">
+      <div class="seller-av">${l.init}</div>
+      <div><div class="seller-n">${l.seller}</div><div class="seller-r">${l.stars}</div></div>
+    </div>
+    <button class="btn btn-wa" onclick="event.stopPropagation()">${WA_SVG} Chat</button>
+  </div>
+</div>`;
+}
+
+function renderListings(data){
+  const t = T[lang];
+  const grid=document.getElementById('listGrid');
+  document.getElementById('listCount').textContent=data.length+' '+t.latestLabel.split(' ')[0];
+  const cards=data.map(l=>cardHtml(l));
+  if(cards.length>=4) cards.splice(4,0,sponsorCardHtml(t));
+  grid.innerHTML=cards.join('');
+}
+
+/* ═══════════════════════════════════════════════
+   LANGUAGE SWITCHER
+═══════════════════════════════════════════════ */
+function setLang(l) {
+  lang = l;
+  const t = T[lang];
+  document.documentElement.dir = t.dir;
+  document.documentElement.lang = lang;
+
+  // Nav
+  document.getElementById('navSearch').placeholder = t.searchPlaceholder;
+  document.getElementById('distLabel').textContent = t.dist;
+  document.querySelector('.btn-ghost').textContent = t.signIn;
+  document.querySelector('.btn-primary').innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> ${t.postItem}`;
+
+  // Hero
+  document.querySelector('.hero h1').innerHTML = t.heroTitle;
+  document.querySelector('.hero-sub').textContent = t.heroSub;
+  document.querySelector('.hero-pill').innerHTML = `<span class="dot"></span> ${t.heroPill}`;
+  document.querySelector('#heroSearch').placeholder = t.searchPlaceholder;
+  document.querySelector('.hero-search button').textContent = t.searchBtn;
+  const heroBtns = document.querySelectorAll('.hero-actions button');
+  if(heroBtns[0]) heroBtns[0].innerHTML = `${t.heroBtn1} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+  if(heroBtns[1]) heroBtns[1].textContent = t.heroBtn2;
+
+  // Stats
+  const statLbls = document.querySelectorAll('.stat-l');
+  const statTexts = ['Active Listings','Verified Sellers','Avg. Rating','Avg. Sale Time','Listing Fee'];
+  const statTextsAr = ['إعلان نشط','بائع موثق','متوسط التقييم','متوسط وقت البيع','رسوم النشر'];
+  const statTextsRu = ['Объявлений','Продавцов','Рейтинг','Срок продажи','Размещение'];
+  const statsMap = {en:statTexts, ar:statTextsAr, ru:statTextsRu};
+  statLbls.forEach((el,i)=>{ if(statsMap[lang][i]) el.textContent=statsMap[lang][i]; });
+
+  // Section titles
+  document.querySelector('.cat-section .sec-title').textContent = t.browseLabel;
+  document.querySelector('.listings-wrap .sec-title').textContent = t.latestLabel;
+  document.querySelector('.filter-bar .filter-label').textContent = t.condLabel;
+
+  // Sort options
+  const sortSel = document.querySelector('.sort-sel');
+  if(sortSel) sortSel.innerHTML=`<option>${t.sortNewest}</option><option>${t.sortLow}</option><option>${t.sortHigh}</option><option>${t.sortViews}</option><option>${t.sortRated}</option><option>${t.sortNear}</option>`;
+
+  // How section
+  document.querySelector('.how-section .sec-title').textContent = t.howTitle;
+  document.querySelector('.how-section > div:nth-child(1) > div:nth-child(2)').textContent = t.howSub;
+  const howCards = document.querySelectorAll('.how-card');
+  const howData = [[t.how1t,t.how1d],[t.how2t,t.how2d],[t.how3t,t.how3d],[t.how4t,t.how4d]];
+  howCards.forEach((c,i)=>{ if(howData[i]){c.querySelector('.how-title').textContent=howData[i][0];c.querySelector('.how-desc').textContent=howData[i][1];}});
+
+  // Reviews title
+  document.querySelector('.reviews-section .sec-title').textContent = t.reviewsTitle;
+
+  // Pricing
+  document.querySelector('.pricing-head h2').textContent = t.pricingTitle;
+  document.querySelector('.pricing-head p').textContent = t.pricingSub;
+
+  // Chat panel
+  document.querySelector('.chat-header-title').textContent = t.msgs;
+  document.querySelector('.chat-header-sub').textContent = `2 ${t.unread}`;
+
+  // Offer modal
+  document.querySelector('#offerModal h2').textContent = t.offerTitle;
+  document.querySelector('.msg-preview').textContent = t.offerTip;
+  document.querySelector('#offerModal .modal-cta').textContent = t.sendOffer;
+
+  // Post modal
+  document.querySelector('#sellModal h2').textContent = t.postTitle;
+  document.querySelector('#sellModal .modal-sub').textContent = t.postSub;
+  document.querySelector('#sellModal .modal-cta').textContent = t.postBtn;
+
+  // New cat modal
+  const nc = document.getElementById('newCatModal');
+  if(nc){
+    nc.querySelector('h2').textContent = t.newCatTitle;
+    nc.querySelector('.modal-sub').textContent = t.newCatSub;
+    nc.querySelector('.modal-cta').textContent = t.newCatBtn;
+  }
+
+  renderCats();
+  renderListings(currentListings());
+}
+
+/* ═══════════════════════════════════════════════
+   CORE FUNCTIONS
+═══════════════════════════════════════════════ */
+let activeSearch = '';
+
+function currentListings() {
+  let data = listings;
+  if(currentCatFilter !== 'all') data = data.filter(l=>l.cat===currentCatFilter);
+  if(activeSearch) data = data.filter(l=>l.title.toLowerCase().includes(activeSearch)||l.cat.includes(activeSearch));
+  return data;
+}
+
+function toggleSave(btn,id){
+  if(savedIds.has(id)){savedIds.delete(id);btn.classList.remove('saved');btn.querySelector('svg').setAttribute('fill','none');btn.querySelector('svg').setAttribute('stroke','#555');}
+  else{savedIds.add(id);btn.classList.add('saved');btn.querySelector('svg').setAttribute('fill','#FF4D4F');btn.querySelector('svg').setAttribute('stroke','#FF4D4F');}
+}
+
+function filterCat(el,cat){
+  currentCatFilter = cat;
+  renderCats();
+  renderListings(currentListings());
+}
+
+function toggleChip(el){el.classList.toggle('on');}
+function pickPlan(el){document.querySelectorAll('.plan-opt').forEach(p=>p.classList.remove('on'));el.classList.add('on');}
+function selPkg(el){document.querySelectorAll('.adv-pkg').forEach(p=>p.classList.remove('on'));el.classList.add('on');}
+function openModal(id){document.getElementById(id)&&document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id)&&document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+function toggleChat(){document.getElementById('chatPanel').classList.toggle('open');}
+
+function openOffer(id,title,price){
+  const t = T[lang];
+  document.getElementById('offerItemName').textContent=`${title} · ${t.listedAt} ${price.toLocaleString()} SAR`;
+  document.getElementById('offerAmount').placeholder=Math.round(price*.85);
+  openModal('offerModal');
+}
+
+function doSearch(){
+  activeSearch=(document.getElementById('navSearch').value||document.getElementById('heroSearch').value).toLowerCase().trim();
+  renderListings(currentListings());
+}
+function quickSearch(q){
+  document.getElementById('heroSearch').value=q;
+  activeSearch=q;
+  renderListings(currentListings());
+  document.getElementById('listGrid').scrollIntoView({behavior:'smooth'});
+}
+
+/* ═══════════════════════════════════════════════
+   DYNAMIC CATEGORY SUGGESTION
+═══════════════════════════════════════════════ */
+function submitNewCat(){
+  const nameInput = document.getElementById('newCatName');
+  const emojiInput = document.getElementById('newCatEmoji');
+  const name = nameInput.value.trim();
+  const emoji = emojiInput.value.trim() || '📦';
+  if(!name) return;
+
+  // Create a slug
+  const slug = name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'') + '_' + Date.now();
+
+  // Add to CAT_NAMES dynamically
+  CAT_NAMES[slug] = {en:name, ar:name, ru:name, icon:emoji};
+
+  // Mark as suggested (not yet with listings — shows with 0 count)
+  activeCats.add(slug);
+
+  // Add to the sell modal select
+  const catSel = document.querySelector('#sellModal select');
+  if(catSel){const opt=document.createElement('option');opt.value=slug;opt.textContent=`${emoji} ${name}`;catSel.appendChild(opt);}
+
+  // Add to hero search select
+  const heroSel = document.getElementById('heroCategory');
+  if(heroSel){const opt=document.createElement('option');opt.textContent=`${emoji} ${name}`;heroSel.appendChild(opt);}
+
+  nameInput.value=''; emojiInput.value='';
+  closeModal('newCatModal');
+
+  // Show toast
+  showToast(`✅ "${name}" suggested! It will appear once listings are added.`);
+  renderCats();
+}
+
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';Object.assign(t.style,{position:'fixed',bottom:'90px',left:'50%',transform:'translateX(-50%)',background:var_teal,color:'white',padding:'10px 22px',borderRadius:'22px',fontFamily:'Sora,sans-serif',fontSize:'.85rem',fontWeight:'700',zIndex:'999',boxShadow:'0 4px 20px rgba(0,0,0,.2)',transition:'opacity .3s'});document.body.appendChild(t);}
+  t.textContent=msg; t.style.opacity='1';
+  setTimeout(()=>{t.style.opacity='0';},3200);
+}
+const var_teal='#2BBFAA';
+
+/* ═══════════════════════════════════════════════
+   WHEN A SELLER POSTS — auto-adds category
+═══════════════════════════════════════════════ */
+function simulateNewListing(catSlug, catName, catEmoji){
+  // Auto-register new category from a posted item
+  if(!CAT_NAMES[catSlug]){
+    CAT_NAMES[catSlug]={en:catName,ar:catName,ru:catName,icon:catEmoji||'📦'};
+  }
+  activeCats.add(catSlug);
+  renderCats();
+}
+
+/* ═══════════════════════════════════════════════
+   SUPABASE — подключение к базе данных
+═══════════════════════════════════════════════ */
+const SUPA_URL = 'https://rhjwhbegrhghghmfpply.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoandoYmVncmhnaGdobWZwcGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MDgyMjgsImV4cCI6MjA5MDE4NDIyOH0.dUjpuqMLWnl09hPtg_0Mhe8sgoSc8HF5wIv4oeA8iqI';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let currentUser = null;
+
+/* --- Загрузка категорий из БД --- */
+async function loadCatsFromDB() {
+  const { data, error } = await sb.from('categories').select('*').order('listing_count', { ascending: false });
+  if (error || !data) return;
+  data.forEach(cat => {
+    if (!CAT_NAMES[cat.slug]) {
+      CAT_NAMES[cat.slug] = { en: cat.name_en, ar: cat.name_ar || cat.name_en, ru: cat.name_ru || cat.name_en, icon: cat.icon || '📦' };
+    }
+    activeCats.add(cat.slug);
+  });
+  activeCats.add('all');
+  renderCats();
+}
+
+/* --- Загрузка объявлений из БД --- */
+async function loadListingsFromDB(catFilter = 'all', searchQ = '') {
+  showListingsLoading(true);
+  let query = sb.from('listings')
+    .select(`*, profiles(full_name, rating, is_pro, is_verified, avatar_url)`)
+    .eq('is_active', true)
+    .order('is_featured', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(40);
+
+  if (catFilter && catFilter !== 'all') query = query.eq('category_slug', catFilter);
+  if (searchQ) query = query.ilike('title', `%${searchQ}%`);
+
+  const { data, error } = await query;
+  showListingsLoading(false);
+
+  if (error) { console.error('Ошибка загрузки:', error); return; }
+
+  if (!data || data.length === 0) {
+    // Нет реальных объявлений — показываем демо
+    renderListings(listings);
+    showToast('📋 Показаны демо-объявления. Добавьте первое реальное!');
+    return;
+  }
+
+  // Конвертируем формат Supabase → формат карточки
+  const mapped = data.map(l => ({
+    id: l.id,
+    title: l.title,
+    price: parseFloat(l.price),
+    orig: l.original_price ? parseFloat(l.original_price) : null,
+    cond: l.condition || 'Good',
+    cat: l.category_slug || 'other',
+    emoji: l.emoji || '📦',
+    seller: l.profiles?.full_name || 'Продавец',
+    init: (l.profiles?.full_name || 'П').charAt(0).toUpperCase(),
+    stars: l.profiles?.rating ? `${l.profiles.rating}★` : '5.0★',
+    featured: l.is_featured,
+    pro: l.profiles?.is_pro || false,
+    views: l.views || 0,
+    neg: l.is_negotiable,
+    images: l.images || [],
+    userId: l.user_id,
+  }));
+
+  renderListings(mapped);
+}
+
+/* --- Загрузочный спиннер --- */
+function showListingsLoading(on) {
+  const grid = document.getElementById('listGrid');
+  if (on) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);font-size:.9rem;">
+      <div style="font-size:2rem;margin-bottom:.5rem;animation:pulse 1.5s infinite;">⏳</div>
+      Загружаем объявления…
+    </div>`;
+  }
+}
+
+/* --- Авторизация через телефон (OTP) --- */
+async function sendOTP() {
+  const phone = document.getElementById('loginPhone')?.value?.trim();
+  if (!phone) return showToast('Введите номер телефона');
+  showToast('Отправляем код…');
+  const { error } = await sb.auth.signInWithOtp({ phone });
+  if (error) return showToast('❌ ' + error.message);
+  document.getElementById('otpStep').style.display = 'block';
+  document.getElementById('phoneStep').style.display = 'none';
+  showToast('✅ Код отправлен на ' + phone);
+}
+
+async function verifyOTP() {
+  const phone = document.getElementById('loginPhone')?.value?.trim();
+  const token = document.getElementById('otpCode')?.value?.trim();
+  if (!token) return showToast('Введите код из SMS');
+  const { data, error } = await sb.auth.verifyOtp({ phone, token, type: 'sms' });
+  if (error) return showToast('❌ Неверный код');
+  currentUser = data.user;
+  closeModal('loginModal');
+  updateNavForUser();
+  showToast('✅ Вы вошли в систему!');
+  // Создаём профиль если нет
+  await sb.from('profiles').upsert({ id: currentUser.id }, { onConflict: 'id', ignoreDuplicates: true });
+}
+
+function updateNavForUser() {
+  if (!currentUser) return;
+  const btn = document.querySelector('.btn-ghost');
+  if (btn) { btn.textContent = '👤 Профиль'; btn.onclick = () => showToast('Профиль — скоро!'); }
+}
+
+/* --- Публикация объявления --- */
+async function submitListing() {
+  if (!currentUser) {
+    closeModal('sellModal');
+    openModal('loginModal');
+    showToast('Сначала войдите в аккаунт');
+    return;
+  }
+
+  const title = document.querySelector('#sellModal input[type=text]')?.value?.trim();
+  const price = document.querySelector('#sellModal input[type=number]')?.value;
+  const catSel = document.querySelector('#sellModal select');
+  const condSel = document.querySelectorAll('#sellModal select')[1];
+  const negSel = document.querySelectorAll('#sellModal select')[2];
+  const desc = document.querySelector('#sellModal textarea')?.value?.trim();
+
+  if (!title || !price) return showToast('Заполните название и цену');
+
+  const isFeatured = document.querySelector('.plan-opt.on .po-n')?.textContent?.includes('Featured') ||
+                     document.querySelector('.plan-opt.on .po-n')?.textContent?.includes('Топ');
+
+  const { data, error } = await sb.from('listings').insert({
+    user_id: currentUser.id,
+    title,
+    price: parseFloat(price),
+    condition: condSel?.value || 'Good',
+    category_slug: catSel?.value || 'other',
+    description: desc,
+    is_negotiable: negSel?.value !== 'Fixed price',
+    is_featured: isFeatured,
+    emoji: getCatEmoji(catSel?.value),
+    district: 'Al-Rawdah',
+    city: 'Jeddah',
+  }).select();
+
+  if (error) { showToast('❌ Ошибка: ' + error.message); return; }
+
+  // Обновляем счётчик категории
+  await sb.rpc('increment_cat_count', { cat_slug: catSel?.value }).catch(() => {});
+
+  closeModal('sellModal');
+  showToast('🎉 Объявление опубликовано!');
+  loadListingsFromDB(currentCatFilter, activeSearch);
+}
+
+function getCatEmoji(slug) {
+  return CAT_NAMES[slug]?.icon || '📦';
+}
+
+/* --- Подписка на новые объявления (realtime) --- */
+function subscribeToNewListings() {
+  sb.channel('listings-channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, payload => {
+      showToast('🆕 Новое объявление: ' + payload.new.title);
+      loadListingsFromDB(currentCatFilter, activeSearch);
+    })
+    .subscribe();
+}
+
+/* --- Сохранение в избранное через Supabase --- */
+async function toggleSaveDB(btn, listingId) {
+  if (!currentUser) { openModal('loginModal'); return; }
+  const isSaved = savedIds.has(listingId);
+  if (isSaved) {
+    await sb.from('saved_listings').delete().match({ user_id: currentUser.id, listing_id: listingId });
+    savedIds.delete(listingId);
+    btn.classList.remove('saved');
+    btn.querySelector('svg').setAttribute('fill', 'none');
+    btn.querySelector('svg').setAttribute('stroke', '#555');
+  } else {
+    await sb.from('saved_listings').insert({ user_id: currentUser.id, listing_id: listingId });
+    savedIds.add(listingId);
+    btn.classList.add('saved');
+    btn.querySelector('svg').setAttribute('fill', '#FF4D4F');
+    btn.querySelector('svg').setAttribute('stroke', '#FF4D4F');
+  }
+}
+
+/* --- Переопределяем фильтрацию для работы с БД --- */
+const _origFilterCat = filterCat;
+filterCat = function(el, cat) {
+  currentCatFilter = cat;
+  renderCats();
+  loadListingsFromDB(cat, activeSearch);
+};
+
+const _origDoSearch = doSearch;
+doSearch = function() {
+  activeSearch = (document.getElementById('navSearch').value || document.getElementById('heroSearch').value).toLowerCase().trim();
+  loadListingsFromDB(currentCatFilter, activeSearch);
+};
+
+/* --- Обновляем кнопку "Post Listing" в модалке --- */
+document.addEventListener('DOMContentLoaded', () => {
+  const postBtn = document.querySelector('#sellModal .modal-cta');
+  if (postBtn) postBtn.onclick = submitListing;
+
+  // Добавляем поля телефона и OTP в loginModal
+  const loginModal = document.querySelector('#loginModal .modal');
+  if (loginModal) {
+    loginModal.innerHTML = `
+      <button class="modal-close" onclick="closeModal('loginModal')">✕</button>
+      <h2>Добро пожаловать</h2>
+      <p class="modal-sub">Войдите через номер телефона</p>
+      <div id="phoneStep">
+        <div class="fg"><label>Номер телефона</label><input type="tel" id="loginPhone" placeholder="+966 5X XXX XXXX"/></div>
+        <button class="modal-cta" onclick="sendOTP()">Получить код →</button>
+      </div>
+      <div id="otpStep" style="display:none">
+        <div class="fg"><label>Код из SMS</label><input type="text" id="otpCode" placeholder="123456" maxlength="6" style="letter-spacing:.3em;font-size:1.2rem;text-align:center"/></div>
+        <button class="modal-cta" onclick="verifyOTP()">Войти →</button>
+        <div class="switch"><span onclick="document.getElementById('otpStep').style.display='none';document.getElementById('phoneStep').style.display='block'">← Изменить номер</span></div>
+      </div>
+      <div class="switch">Нет аккаунта? <span onclick="closeModal('loginModal');openModal('sellModal')">Зарегистрируйтесь бесплатно</span></div>`;
+  }
+
+  // Проверяем текущую сессию
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) { currentUser = data.session.user; updateNavForUser(); }
+  });
+});
+
+/* ═══════════════════════════════════════════════
+   INIT — запускаем с Supabase
+═══════════════════════════════════════════════ */
+setLang('ru');
+loadCatsFromDB().then(() => {
+  loadListingsFromDB();
+  subscribeToNewListings();
+});
+</script>
+<!-- ─── NEW CATEGORY MODAL ─── -->
+<div class="overlay" id="newCatModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('newCatModal')">✕</button>
+    <h2 id="newCatTitle">Suggest a New Category</h2>
+    <p class="modal-sub" id="newCatSub">Don't see your category? Suggest it — popular ones get added!</p>
+    <div class="fg">
+      <label id="newCatLabel">Category Name</label>
+      <input type="text" id="newCatName" placeholder="e.g. Electronics, Sports, Books…"/>
+    </div>
+    <div class="fg">
+      <label id="newCatEmojiLabel">Pick an Emoji</label>
+      <input type="text" id="newCatEmoji" placeholder="📦" maxlength="4" style="font-size:1.5rem;text-align:center;"/>
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">📱</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">📚</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">⚽</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">👗</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">🏡</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">🚗</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">🐾</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">🎨</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">🎮</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">🍽️</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">💼</span>
+      <span onclick="document.getElementById('newCatEmoji').value=this.textContent" style="cursor:pointer;font-size:1.4rem;padding:4px;border-radius:8px;background:var(--sky);">🌿</span>
+    </div>
+    <button class="modal-cta" id="newCatBtn" onclick="submitNewCat()">Submit Suggestion</button>
+  </div>
+</div>
+
+</body>
+</html>
