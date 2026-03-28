@@ -1194,7 +1194,7 @@ function pickPlan(el){document.querySelectorAll('.plan-opt').forEach(p=>p.classL
 function selPkg(el){document.querySelectorAll('.adv-pkg').forEach(p=>p.classList.remove('on'));el.classList.add('on');}
 function openModal(id){
   document.getElementById(id)&&document.getElementById(id).classList.add('open');
-  if(id==='sellModal') fillSellCategories();
+  if(id==='sellModal') fillSellCategories();  // async, ok
 }
 function closeModal(id){document.getElementById(id)&&document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
@@ -1521,16 +1521,21 @@ function previewPhotos(input) {
   document.getElementById('sellUploadZone').querySelector('div:last-of-type').textContent = `${files.length} фото выбрано`;
 }
 
-/* --- Загрузка категорий в форму продажи --- */
-function fillSellCategories() {
+/* --- Загрузка категорий в форму продажи (только из БД) --- */
+let dbCategories = [];
+
+async function fillSellCategories() {
   const sel = document.getElementById('sellCategory');
   if (!sel) return;
-  sel.innerHTML = '';
-  Object.entries(CAT_NAMES).forEach(([slug, def]) => {
-    if (slug === 'all') return;
+  if (dbCategories.length === 0) {
+    const { data } = await sb.from('categories').select('slug,name_ru,name_en,icon').order('name_en');
+    if (data) dbCategories = data;
+  }
+  sel.innerHTML = '<option value="">Выберите категорию</option>';
+  dbCategories.forEach(cat => {
     const opt = document.createElement('option');
-    opt.value = slug;
-    opt.textContent = `${def.icon || '📦'} ${def[lang] || def.en}`;
+    opt.value = cat.slug;
+    opt.textContent = `${cat.icon || '📦'} ${cat.name_ru || cat.name_en}`;
     sel.appendChild(opt);
   });
 }
