@@ -407,6 +407,19 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
 .eid-close{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
 .eid-close:hover{background:rgba(255,255,255,.25);}
 @media(max-width:640px){.eid-content{padding:.65rem 1rem;}.eid-ar{font-size:1.2rem;}.eid-crescent{font-size:1.6rem;}}
+.btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;border:1.5px solid var(--sand);border-radius:25px;background:white;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;color:var(--ink);transition:all .15s;margin-bottom:.8rem;}
+.btn-google:hover{background:var(--sky);border-color:#ccc;}
+.auth-divider{text-align:center;position:relative;margin:.8rem 0;font-size:.75rem;color:var(--muted);}
+.auth-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--sand);}
+.auth-divider span{background:white;padding:0 .7rem;position:relative;}
+.my-listing-item{display:flex;align-items:center;gap:10px;padding:.75rem;border:1px solid var(--sand);border-radius:12px;margin-bottom:.6rem;background:var(--sky);}
+.my-listing-emoji{font-size:1.8rem;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:white;border-radius:10px;border:1px solid var(--sand);}
+.my-listing-info{flex:1;min-width:0;}
+.my-listing-title{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.my-listing-price{font-size:.82rem;color:var(--teal-d);font-weight:700;}
+.my-listing-meta{font-size:.7rem;color:var(--muted);}
+.my-listing-edit{flex-shrink:0;padding:6px 12px;border-radius:20px;border:1.5px solid var(--teal);background:transparent;color:var(--teal-d);font-family:'Sora',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;}
+.my-listing-edit:hover{background:var(--teal-pale);}
 </style>
 
 <!-- ─── HERO ─── -->
@@ -704,12 +717,79 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
 <div class="overlay" id="loginModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('loginModal')">✕</button>
-    <h2>Welcome Back</h2>
-    <p class="modal-sub">Sign in to manage your listings and messages.</p>
-    <div class="fg"><label>Phone Number</label><input type="tel" placeholder="+966 5X XXX XXXX"/></div>
-    <div class="fg"><label>Password</label><input type="password" placeholder="••••••••"/></div>
-    <button class="modal-cta">Sign In →</button>
-    <div class="switch">New to Jari? <span onclick="closeModal('loginModal');openModal('sellModal')">Create free account</span></div>
+    <h2 id="authTitle">Добро пожаловать</h2>
+    <p class="modal-sub" id="authSub">Войдите, чтобы управлять объявлениями</p>
+
+    <button class="btn-google" onclick="signInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Войти через Google
+    </button>
+
+    <div class="auth-divider"><span>или</span></div>
+
+    <div class="fg"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"/></div>
+    <div class="fg"><label>Пароль</label><input type="password" id="authPassword" placeholder="••••••••" minlength="6"/></div>
+    <p id="authError" style="color:var(--red);font-size:.78rem;margin-bottom:.5rem;display:none;"></p>
+    <button class="modal-cta" id="authSubmitBtn" onclick="submitAuth()">Войти →</button>
+
+    <div class="switch" id="authToggle">
+      Нет аккаунта? <span onclick="toggleAuthMode()">Зарегистрироваться</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ЛИЧНЫЙ КАБИНЕТ ─── -->
+<div class="overlay" id="cabinetModal">
+  <div class="modal" style="max-width:560px;">
+    <button class="modal-close" onclick="closeModal('cabinetModal')">✕</button>
+    <h2>Личный кабинет</h2>
+    <div id="cabinetProfile" style="display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;padding:.9rem;background:var(--sky);border-radius:12px;border:1px solid var(--sand);">
+      <div id="cabinetAvatar" style="width:48px;height:48px;border-radius:50%;background:var(--teal-pale);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;color:var(--teal-d);flex-shrink:0;"></div>
+      <div>
+        <div id="cabinetName" style="font-weight:700;font-size:.95rem;"></div>
+        <div id="cabinetEmail" style="font-size:.78rem;color:var(--muted);"></div>
+      </div>
+      <button class="btn btn-ghost" style="margin-left:auto;font-size:.75rem;padding:6px 14px;" onclick="signOut()">Выйти</button>
+    </div>
+
+    <div style="font-weight:700;font-size:.9rem;margin-bottom:.8rem;">Мои объявления</div>
+    <div id="myListingsList">
+      <div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem;">Загружаем…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── РЕДАКТИРОВАНИЕ ОБЪЯВЛЕНИЯ ─── -->
+<div class="overlay" id="editListingModal">
+  <div class="modal" style="max-width:480px;">
+    <button class="modal-close" onclick="closeModal('editListingModal')">✕</button>
+    <h2>Редактировать объявление</h2>
+    <input type="hidden" id="editListingId"/>
+    <div class="fg"><label>Название</label><input type="text" id="editTitle" placeholder="Название товара"/></div>
+    <div class="fg-2">
+      <div class="fg"><label>Цена (SAR)</label><input type="number" id="editPrice" placeholder="0"/></div>
+      <div class="fg"><label>Старая цена</label><input type="number" id="editOrigPrice" placeholder="необязательно"/></div>
+    </div>
+    <div class="fg"><label>Описание</label><textarea id="editDesc" placeholder="Описание товара…"></textarea></div>
+    <div class="fg-2">
+      <div class="fg"><label>Состояние</label>
+        <select id="editCond">
+          <option value="Like New">Like New</option>
+          <option value="Good">Good</option>
+          <option value="Fair">Fair</option>
+        </select>
+      </div>
+      <div class="fg"><label>Торг</label>
+        <select id="editNeg">
+          <option value="true">Торг уместен</option>
+          <option value="false">Фиксированная цена</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:.7rem;">
+      <button class="modal-cta" onclick="saveEditListing()" style="flex:1;">Сохранить →</button>
+      <button onclick="deleteMyListing()" style="flex:0 0 auto;padding:13px 16px;border-radius:25px;border:1.5px solid var(--red);background:transparent;color:var(--red);font-family:'Sora',sans-serif;font-weight:700;cursor:pointer;">🗑 Удалить</button>
+    </div>
   </div>
 </div>
 
@@ -1251,25 +1331,40 @@ function showListingsLoading(on) {
   }
 }
 
-/* --- Авторизация через телефон (OTP) --- */
-async function sendOTP() {
-  const phone = document.getElementById('loginPhone')?.value?.trim();
-  if (!phone) return showToast('Введите номер телефона');
-  showToast('Отправляем код…');
-  const { error } = await sb.auth.signInWithOtp({ phone });
-  if (error) return showToast('❌ ' + error.message);
-  document.getElementById('otpStep').style.display = 'block';
-  document.getElementById('phoneStep').style.display = 'none';
-  showToast('✅ Код отправлен на ' + phone);
+/* --- Авторизация: Email + Google --- */
+let authMode = 'login'; // 'login' | 'register'
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('authTitle').textContent = authMode === 'login' ? 'Добро пожаловать' : 'Регистрация';
+  document.getElementById('authSub').textContent = authMode === 'login' ? 'Войдите, чтобы управлять объявлениями' : 'Создайте бесплатный аккаунт';
+  document.getElementById('authSubmitBtn').textContent = authMode === 'login' ? 'Войти →' : 'Зарегистрироваться →';
+  document.getElementById('authToggle').innerHTML = authMode === 'login'
+    ? 'Нет аккаунта? <span onclick="toggleAuthMode()">Зарегистрироваться</span>'
+    : 'Уже есть аккаунт? <span onclick="toggleAuthMode()">Войти</span>';
+  document.getElementById('authError').style.display = 'none';
 }
 
-async function verifyOTP() {
-  const phone = document.getElementById('loginPhone')?.value?.trim();
-  const token = document.getElementById('otpCode')?.value?.trim();
-  if (!token) return showToast('Введите код из SMS');
-  const { data, error } = await sb.auth.verifyOtp({ phone, token, type: 'sms' });
-  if (error) return showToast('❌ Неверный код');
-  currentUser = data.user;
+async function submitAuth() {
+  const email = document.getElementById('authEmail')?.value?.trim();
+  const password = document.getElementById('authPassword')?.value?.trim();
+  const errEl = document.getElementById('authError');
+  errEl.style.display = 'none';
+  if (!email || !password) { errEl.textContent = 'Заполните email и пароль'; errEl.style.display = 'block'; return; }
+
+  let result;
+  if (authMode === 'login') {
+    result = await sb.auth.signInWithPassword({ email, password });
+  } else {
+    result = await sb.auth.signUp({ email, password });
+  }
+  if (result.error) { errEl.textContent = '❌ ' + result.error.message; errEl.style.display = 'block'; return; }
+  currentUser = result.data.user;
+  if (authMode === 'register' && !result.data.session) {
+    closeModal('loginModal');
+    showToast('✅ Подтвердите email — письмо отправлено!');
+    return;
+  }
   closeModal('loginModal');
   updateNavForUser();
   showToast('✅ Вы вошли в систему!');
@@ -1277,10 +1372,111 @@ async function verifyOTP() {
   await sb.from('profiles').upsert({ id: currentUser.id }, { onConflict: 'id', ignoreDuplicates: true });
 }
 
+async function signInGoogle() {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) showToast('❌ ' + error.message);
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  closeModal('cabinetModal');
+  const btn = document.querySelector('.btn-ghost');
+  if (btn) { btn.textContent = 'Войти'; btn.onclick = () => openModal('loginModal'); }
+  showToast('Вы вышли из аккаунта');
+}
+
 function updateNavForUser() {
   if (!currentUser) return;
   const btn = document.querySelector('.btn-ghost');
-  if (btn) { btn.textContent = '👤 Профиль'; btn.onclick = () => showToast('Профиль — скоро!'); }
+  if (btn) {
+    btn.textContent = '👤 Кабинет';
+    btn.onclick = () => openCabinet();
+  }
+}
+
+async function openCabinet() {
+  openModal('cabinetModal');
+  const email = currentUser.email || '';
+  const name = currentUser.user_metadata?.full_name || email.split('@')[0];
+  document.getElementById('cabinetAvatar').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('cabinetName').textContent = name;
+  document.getElementById('cabinetEmail').textContent = email;
+  await loadMyListings();
+}
+
+async function loadMyListings() {
+  const container = document.getElementById('myListingsList');
+  const { data, error } = await sb.from('listings')
+    .select('id,title,price,emoji,condition,is_active,views,created_at,description,orig_price,is_negotiable')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem;">У вас пока нет объявлений</div>';
+    return;
+  }
+
+  container.innerHTML = data.map(l => `
+    <div class="my-listing-item">
+      <div class="my-listing-emoji">${l.emoji || '📦'}</div>
+      <div class="my-listing-info">
+        <div class="my-listing-title">${l.title}</div>
+        <div class="my-listing-price">${parseFloat(l.price).toLocaleString()} SAR</div>
+        <div class="my-listing-meta">${l.condition} · 👁 ${l.views || 0} · ${l.is_active ? '🟢 Активно' : '⚫ Скрыто'}</div>
+      </div>
+      <button class="my-listing-edit" onclick="openEditListing(${JSON.stringify(l).split('"').join('&quot;')})">Изменить</button>
+    </div>
+  `).join('');
+}
+
+function openEditListing(l) {
+  if (typeof l === 'string') l = JSON.parse(l.split('&quot;').join('"'));
+  document.getElementById('editListingId').value = l.id;
+  document.getElementById('editTitle').value = l.title;
+  document.getElementById('editPrice').value = l.price;
+  document.getElementById('editOrigPrice').value = l.orig_price || '';
+  document.getElementById('editDesc').value = l.description || '';
+  document.getElementById('editCond').value = l.condition || 'Good';
+  document.getElementById('editNeg').value = String(l.is_negotiable);
+  closeModal('cabinetModal');
+  openModal('editListingModal');
+}
+
+async function saveEditListing() {
+  const id = document.getElementById('editListingId').value;
+  const title = document.getElementById('editTitle').value.trim();
+  const price = parseFloat(document.getElementById('editPrice').value);
+  const orig_price = document.getElementById('editOrigPrice').value ? parseFloat(document.getElementById('editOrigPrice').value) : null;
+  const description = document.getElementById('editDesc').value.trim();
+  const condition = document.getElementById('editCond').value;
+  const is_negotiable = document.getElementById('editNeg').value === 'true';
+
+  if (!title || !price) return showToast('Заполните название и цену');
+
+  const { error } = await sb.from('listings').update({ title, price, orig_price, description, condition, is_negotiable }).eq('id', id);
+  if (error) return showToast('❌ ' + error.message);
+
+  closeModal('editListingModal');
+  openModal('cabinetModal');
+  await loadMyListings();
+  loadListingsFromDB(currentCatFilter, activeSearch);
+  showToast('✅ Объявление обновлено!');
+}
+
+async function deleteMyListing() {
+  const id = document.getElementById('editListingId').value;
+  if (!confirm('Удалить объявление?')) return;
+  const { error } = await sb.from('listings').delete().eq('id', id);
+  if (error) return showToast('❌ ' + error.message);
+  closeModal('editListingModal');
+  openModal('cabinetModal');
+  await loadMyListings();
+  loadListingsFromDB(currentCatFilter, activeSearch);
+  showToast('🗑 Объявление удалено');
 }
 
 /* --- Публикация объявления --- */
@@ -1375,33 +1571,18 @@ doSearch = function() {
   loadListingsFromDB(currentCatFilter, activeSearch);
 };
 
-/* --- Обновляем кнопку "Post Listing" в модалке --- */
+/* --- Init auth --- */
 document.addEventListener('DOMContentLoaded', () => {
   const postBtn = document.querySelector('#sellModal .modal-cta');
   if (postBtn) postBtn.onclick = submitListing;
 
-  // Добавляем поля телефона и OTP в loginModal
-  const loginModal = document.querySelector('#loginModal .modal');
-  if (loginModal) {
-    loginModal.innerHTML = `
-      <button class="modal-close" onclick="closeModal('loginModal')">✕</button>
-      <h2>Добро пожаловать</h2>
-      <p class="modal-sub">Войдите через номер телефона</p>
-      <div id="phoneStep">
-        <div class="fg"><label>Номер телефона</label><input type="tel" id="loginPhone" placeholder="+966 5X XXX XXXX"/></div>
-        <button class="modal-cta" onclick="sendOTP()">Получить код →</button>
-      </div>
-      <div id="otpStep" style="display:none">
-        <div class="fg"><label>Код из SMS</label><input type="text" id="otpCode" placeholder="123456" maxlength="6" style="letter-spacing:.3em;font-size:1.2rem;text-align:center"/></div>
-        <button class="modal-cta" onclick="verifyOTP()">Войти →</button>
-        <div class="switch"><span onclick="document.getElementById('otpStep').style.display='none';document.getElementById('phoneStep').style.display='block'">← Изменить номер</span></div>
-      </div>
-      <div class="switch">Нет аккаунта? <span onclick="closeModal('loginModal');openModal('sellModal')">Зарегистрируйтесь бесплатно</span></div>`;
-  }
-
-  // Проверяем текущую сессию
   sb.auth.getSession().then(({ data }) => {
     if (data.session) { currentUser = data.session.user; updateNavForUser(); }
+  });
+
+  sb.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user || null;
+    if (currentUser) { updateNavForUser(); closeModal('loginModal'); }
   });
 });
 
