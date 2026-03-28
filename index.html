@@ -1452,7 +1452,10 @@ async function loadMyListings() {
         <div class="my-listing-price">${parseFloat(l.price).toLocaleString()} SAR</div>
         <div class="my-listing-meta">${l.condition} · 👁 ${l.views || 0} · ${l.is_active ? '🟢 Активно' : '⚫ Скрыто'}</div>
       </div>
-      <button class="my-listing-edit" onclick="openEditListing(${JSON.stringify(l).split('"').join('&quot;')})">Изменить</button>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+        <button class="my-listing-edit" onclick="openEditListing(${JSON.stringify(l).split('"').join('&quot;')})">✏️ Изменить</button>
+        <button class="my-listing-edit" style="border-color:var(--red);color:var(--red);" onclick="quickDeleteListing('${l.id}','${l.title.replace(/'/g,"\\'")}')">🗑 Удалить</button>
+      </div>
     </div>
   `).join('');
 }
@@ -1498,6 +1501,15 @@ async function deleteMyListing() {
   if (error) return showToast('❌ ' + error.message);
   closeModal('editListingModal');
   openModal('cabinetModal');
+  await loadMyListings();
+  loadListingsFromDB(currentCatFilter, activeSearch);
+  showToast('🗑 Объявление удалено');
+}
+
+async function quickDeleteListing(id, title) {
+  if (!confirm(`Удалить «${title}»?`)) return;
+  const { error } = await sb.from('listings').delete().eq('id', id);
+  if (error) return showToast('❌ ' + error.message);
   await loadMyListings();
   loadListingsFromDB(currentCatFilter, activeSearch);
   showToast('🗑 Объявление удалено');
