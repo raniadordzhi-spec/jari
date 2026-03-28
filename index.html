@@ -412,6 +412,12 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
 .auth-divider{text-align:center;position:relative;margin:.8rem 0;font-size:.75rem;color:var(--muted);}
 .auth-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--sand);}
 .auth-divider span{background:white;padding:0 .7rem;position:relative;}
+.btn-msg{background:var(--teal-pale);border:1.5px solid var(--teal-mid);color:var(--teal-d);padding:6px 12px;border-radius:20px;font-family:'Sora',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-msg:hover{background:var(--teal);color:white;}
+.msg-bubble{padding:.55rem .9rem;border-radius:16px;max-width:75%;font-size:.85rem;line-height:1.5;word-break:break-word;}
+.msg-mine{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:white;align-self:flex-end;border-bottom-right-radius:4px;}
+.msg-theirs{background:var(--sky);color:var(--ink);border:1px solid var(--sand);align-self:flex-start;border-bottom-left-radius:4px;}
+.msg-time{font-size:.65rem;opacity:.6;margin-top:2px;}
 .my-listing-item{display:flex;align-items:center;gap:10px;padding:.75rem;border:1px solid var(--sand);border-radius:12px;margin-bottom:.6rem;background:var(--sky);}
 .my-listing-emoji{font-size:1.8rem;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:white;border-radius:10px;border:1px solid var(--sand);}
 .my-listing-info{flex:1;min-width:0;}
@@ -661,14 +667,45 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
   <span class="chat-notif">2</span>
 </button>
 <div class="chat-panel" id="chatPanel">
-  <div class="chat-header">
+  <div class="chat-header" style="cursor:pointer;" onclick="openMessenger()">
     <div class="chat-header-icon">💬</div>
-    <div><div class="chat-header-title">Messages</div><div class="chat-header-sub">2 unread conversations</div></div>
+    <div><div class="chat-header-title">Messages</div><div class="chat-header-sub" id="chatPanelSub">Open messenger</div></div>
+    <svg style="margin-left:auto;opacity:.7;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
   </div>
-  <div class="chat-list">
-    <div class="chat-item"><div class="chat-av">أم<div class="chat-online"></div></div><div><div class="chat-name">Um Khalid</div><div class="chat-preview">Is the stroller still available?</div></div><div class="chat-time">2m</div><div class="unread-dot"></div></div>
-    <div class="chat-item"><div class="chat-av">سا</div><div><div class="chat-name">Sara H.</div><div class="chat-preview">Can you do 70 SAR for the bundle?</div></div><div class="chat-time">1h</div><div class="unread-dot"></div></div>
-    <div class="chat-item"><div class="chat-av">نو<div class="chat-online"></div></div><div><div class="chat-name">Nour K.</div><div class="chat-preview">Thank you! Great item 🙏</div></div><div class="chat-time">3h</div></div>
+  <div class="chat-list" id="chatPanelList">
+    <div style="text-align:center;padding:1.5rem;color:rgba(255,255,255,.5);font-size:.8rem;">Sign in to see messages</div>
+  </div>
+</div>
+
+<!-- ─── MESSENGER MODAL ─── -->
+<div class="overlay" id="messengerModal">
+  <div class="modal" style="max-width:560px;padding:0;overflow:hidden;display:flex;flex-direction:column;height:85vh;">
+    <!-- Conversation list view -->
+    <div id="convListView" style="display:flex;flex-direction:column;height:100%;">
+      <div style="padding:1.2rem 1.4rem;border-bottom:1px solid var(--sand);display:flex;align-items:center;gap:10px;">
+        <button class="modal-close" style="position:static;" onclick="closeModal('messengerModal')">✕</button>
+        <h2 style="font-size:1.1rem;margin:0;">Messages</h2>
+      </div>
+      <div id="convList" style="flex:1;overflow-y:auto;padding:.6rem;"></div>
+    </div>
+    <!-- Thread view -->
+    <div id="threadView" style="display:none;flex-direction:column;height:100%;">
+      <div style="padding:.9rem 1.2rem;border-bottom:1px solid var(--sand);display:flex;align-items:center;gap:10px;">
+        <button onclick="showConvList()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--muted);">←</button>
+        <div style="flex:1;min-width:0;">
+          <div id="threadTitle" style="font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          <div id="threadSub" style="font-size:.72rem;color:var(--muted);"></div>
+        </div>
+        <button class="modal-close" style="position:static;" onclick="closeModal('messengerModal')">✕</button>
+      </div>
+      <div id="messagesList" style="flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.6rem;"></div>
+      <div style="padding:.8rem 1rem;border-top:1px solid var(--sand);display:flex;gap:.6rem;">
+        <input type="text" id="msgInput" placeholder="Type a message…" style="flex:1;border:1.5px solid var(--sand);border-radius:22px;padding:9px 16px;font-family:'Sora',sans-serif;font-size:.88rem;outline:none;" onkeydown="if(event.key==='Enter')sendMessage()"/>
+        <button onclick="sendMessage()" style="background:linear-gradient(135deg,var(--teal),var(--teal-d));border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1070,7 +1107,7 @@ function cardHtml(l){
       <div class="seller-av">${l.init}</div>
       <div><div class="seller-n">${l.seller}</div><div class="seller-r">${l.stars}</div></div>
     </div>
-    <button class="btn btn-wa" onclick="event.stopPropagation()">${WA_SVG} Chat</button>
+    <button class="btn-msg" onclick="event.stopPropagation();startConversation('${l.id}','${l.userId}','${l.title.replace(/'/g,"\\'")}')">💬 Message</button>
   </div>
 </div>`;
 }
@@ -1198,7 +1235,7 @@ function openModal(id){
 }
 function closeModal(id){document.getElementById(id)&&document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
-function toggleChat(){document.getElementById('chatPanel').classList.toggle('open');}
+function toggleChat(){ if(currentUser){ openMessenger(); } else { document.getElementById('chatPanel').classList.toggle('open'); } }
 
 function openOffer(id,title,price){
   const t = T[lang];
@@ -1748,6 +1785,159 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentUser) { updateNavForUser(); closeModal('loginModal'); }
   });
 });
+
+/* ═══════════════════════════════════════════════
+   MESSENGER
+═══════════════════════════════════════════════ */
+let activeConvId = null;
+let msgRealtimeSub = null;
+
+async function startConversation(listingId, sellerId, listingTitle) {
+  if (!currentUser) { openModal('loginModal'); return; }
+  if (currentUser.id === sellerId) { showToast('This is your own listing'); return; }
+
+  // Find or create conversation
+  let { data: existing } = await sb.from('conversations')
+    .select('id').eq('listing_id', listingId).eq('buyer_id', currentUser.id).single();
+
+  let convId;
+  if (existing) {
+    convId = existing.id;
+  } else {
+    const { data: created, error } = await sb.from('conversations').insert({
+      listing_id: listingId,
+      buyer_id: currentUser.id,
+      seller_id: sellerId,
+      last_message: '',
+    }).select('id').single();
+    if (error) { showToast('❌ ' + error.message); return; }
+    convId = created.id;
+  }
+
+  openModal('messengerModal');
+  openThread(convId, listingTitle, 'Seller');
+}
+
+async function openMessenger() {
+  if (!currentUser) { openModal('loginModal'); return; }
+  document.getElementById('chatPanel').classList.remove('open');
+  openModal('messengerModal');
+  showConvList();
+  await loadConversations();
+}
+
+function showConvList() {
+  document.getElementById('convListView').style.display = 'flex';
+  document.getElementById('threadView').style.display = 'none';
+  if (msgRealtimeSub) { sb.removeChannel(msgRealtimeSub); msgRealtimeSub = null; }
+  activeConvId = null;
+  loadConversations();
+}
+
+async function loadConversations() {
+  const list = document.getElementById('convList');
+  list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem;">Loading…</div>';
+
+  const { data, error } = await sb.from('conversations')
+    .select('id, last_message, last_message_at, listing_id, buyer_id, seller_id, listings(title,emoji)')
+    .or(`buyer_id.eq.${currentUser.id},seller_id.eq.${currentUser.id}`)
+    .order('last_message_at', { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem;">No conversations yet</div>';
+    return;
+  }
+
+  list.innerHTML = data.map(c => {
+    const isBuyer = c.buyer_id === currentUser.id;
+    const otherLabel = isBuyer ? 'Seller' : 'Buyer';
+    const title = c.listings?.title || 'Listing';
+    const emoji = c.listings?.emoji || '📦';
+    const preview = c.last_message || 'Start the conversation…';
+    const time = c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="chat-item" onclick="openThread('${c.id}','${title.replace(/'/g,"\\'")}','${otherLabel}')">
+      <div class="chat-av" style="background:var(--teal-pale);color:var(--teal-d);">${emoji}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="chat-name">${title}</div>
+        <div class="chat-preview" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${preview}</div>
+      </div>
+      <div class="chat-time">${time}</div>
+    </div>`;
+  }).join('');
+
+  // Update chat panel preview
+  document.getElementById('chatPanelSub').textContent = `${data.length} conversation${data.length !== 1 ? 's' : ''}`;
+}
+
+async function openThread(convId, listingTitle, otherName) {
+  activeConvId = convId;
+  document.getElementById('convListView').style.display = 'none';
+  document.getElementById('threadView').style.display = 'flex';
+  document.getElementById('threadTitle').textContent = listingTitle;
+  document.getElementById('threadSub').textContent = otherName;
+  document.getElementById('messagesList').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem;">Loading…</div>';
+
+  await loadMessages(convId);
+  subscribeToMessages(convId);
+  document.getElementById('msgInput').focus();
+}
+
+async function loadMessages(convId) {
+  const { data, error } = await sb.from('messages')
+    .select('id, text, sender_id, created_at')
+    .eq('conversation_id', convId)
+    .order('created_at', { ascending: true });
+
+  const list = document.getElementById('messagesList');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem;">No messages yet. Say hello! 👋</div>';
+    return;
+  }
+  list.innerHTML = data.map(m => renderBubble(m)).join('');
+  list.scrollTop = list.scrollHeight;
+}
+
+function renderBubble(m) {
+  const mine = m.sender_id === currentUser.id;
+  const time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};">
+    <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${m.text}</div>
+    <div class="msg-time" style="align-self:${mine ? 'flex-end' : 'flex-start'};padding:0 4px;">${time}</div>
+  </div>`;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text || !activeConvId) return;
+  input.value = '';
+
+  const { error } = await sb.from('messages').insert({
+    conversation_id: activeConvId,
+    sender_id: currentUser.id,
+    text,
+  });
+  if (error) { showToast('❌ ' + error.message); return; }
+
+  await sb.from('conversations').update({
+    last_message: text,
+    last_message_at: new Date().toISOString(),
+  }).eq('id', activeConvId);
+}
+
+function subscribeToMessages(convId) {
+  if (msgRealtimeSub) sb.removeChannel(msgRealtimeSub);
+  msgRealtimeSub = sb.channel(`messages-${convId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${convId}` }, payload => {
+      const list = document.getElementById('messagesList');
+      if (!list) return;
+      const empty = list.querySelector('div[style*="No messages"]') || list.querySelector('div[style*="Loading"]');
+      if (empty) empty.remove();
+      list.insertAdjacentHTML('beforeend', renderBubble(payload.new));
+      list.scrollTop = list.scrollHeight;
+    })
+    .subscribe();
+}
 
 /* ═══════════════════════════════════════════════
    INIT — запускаем с Supabase
