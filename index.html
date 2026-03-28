@@ -687,29 +687,50 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
 <div class="overlay" id="sellModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('sellModal')">✕</button>
-    <h2>Post an Item</h2>
-    <p class="modal-sub">Go live in your neighborhood in 60 seconds.</p>
-    <div class="fg"><label>Title</label><input type="text" placeholder="e.g. Graco Stroller, barely used"/></div>
+    <h2>Разместить объявление</h2>
+    <p class="modal-sub">Опубликуйте за 60 секунд</p>
+    <div class="fg"><label>Название</label><input type="text" id="sellTitle" placeholder="Например: iPhone 14 Pro, 256GB"/></div>
     <div class="fg-2">
-      <div class="fg"><label>Category</label><select><option>Strollers</option><option>Clothing 0–3m</option><option>Clothing 3–6m</option><option>Furniture</option><option>Toys</option><option>Feeding</option><option>Safety</option><option>Services</option></select></div>
-      <div class="fg"><label>Condition</label><select><option>Like New</option><option>Good</option><option>Fair</option><option>Brand New</option></select></div>
-    </div>
-    <div class="fg-2">
-      <div class="fg"><label>Price (SAR)</label><input type="number" placeholder="150"/></div>
-      <div class="fg"><label>Negotiable?</label><select><option>Yes — accepts offers</option><option>Fixed price</option></select></div>
-    </div>
-    <div class="fg"><label>Description</label><textarea placeholder="Brand, age, condition details, any flaws…"></textarea></div>
-    <div class="fg"><label>Photos (up to 8)</label><div class="upload-zone"><div class="uz-ic">📷</div>Tap to upload photos</div></div>
-    <div class="fg"><label>WhatsApp (optional)</label><input type="tel" placeholder="+966 5X XXX XXXX"/></div>
-    <div class="divider"></div>
-    <div class="fg"><label>Listing Type</label>
-      <div class="plan-pick">
-        <div class="plan-opt on" onclick="pickPlan(this)"><div class="po-n">Standard</div><div class="po-p">Free</div><div class="po-d">Normal placement</div></div>
-        <div class="plan-opt" onclick="pickPlan(this)"><div class="po-n">⭐ Featured</div><div class="po-p">15 SAR</div><div class="po-d">Top of results</div></div>
+      <div class="fg"><label>Категория</label><select id="sellCategory"><option value="">Загрузка…</option></select></div>
+      <div class="fg"><label>Состояние</label>
+        <select id="sellCondition">
+          <option value="Like New">Like New</option>
+          <option value="Good">Good</option>
+          <option value="Fair">Fair</option>
+          <option value="Brand New">Brand New</option>
+        </select>
       </div>
     </div>
-    <button class="modal-cta">Post Listing →</button>
-    <div class="switch">Have an account? <span onclick="closeModal('sellModal');openModal('loginModal')">Sign in</span></div>
+    <div class="fg-2">
+      <div class="fg"><label>Цена (SAR)</label><input type="number" id="sellPrice" placeholder="0"/></div>
+      <div class="fg"><label>Старая цена (SAR)</label><input type="number" id="sellOrigPrice" placeholder="необязательно"/></div>
+    </div>
+    <div class="fg"><label>Торг</label>
+      <select id="sellNeg">
+        <option value="true">Торг уместен</option>
+        <option value="false">Фиксированная цена</option>
+      </select>
+    </div>
+    <div class="fg"><label>Описание</label><textarea id="sellDesc" placeholder="Бренд, возраст, состояние, дефекты…"></textarea></div>
+    <div class="fg">
+      <label>Фото (до 5)</label>
+      <div class="upload-zone" id="sellUploadZone" onclick="document.getElementById('sellPhotos').click()">
+        <div class="uz-ic">📷</div>
+        <div>Нажмите чтобы загрузить фото</div>
+        <input type="file" id="sellPhotos" accept="image/*" multiple style="display:none" onchange="previewPhotos(this)"/>
+      </div>
+      <div id="sellPhotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:.5rem;"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="fg"><label>Тип размещения</label>
+      <div class="plan-pick">
+        <div class="plan-opt on" onclick="pickPlan(this)"><div class="po-n">Стандарт</div><div class="po-p">Бесплатно</div><div class="po-d">Обычное место</div></div>
+        <div class="plan-opt" onclick="pickPlan(this)"><div class="po-n">⭐ Топ</div><div class="po-p">15 SAR</div><div class="po-d">Первым в списке</div></div>
+      </div>
+    </div>
+    <p id="sellError" style="color:var(--red);font-size:.78rem;margin-bottom:.5rem;display:none;"></p>
+    <button class="modal-cta" id="sellSubmitBtn" onclick="submitListing()">Опубликовать →</button>
+    <div class="switch">Есть аккаунт? <span onclick="closeModal('sellModal');openModal('loginModal')">Войти</span></div>
   </div>
 </div>
 
@@ -1171,7 +1192,10 @@ function filterCat(el,cat){
 function toggleChip(el){el.classList.toggle('on');}
 function pickPlan(el){document.querySelectorAll('.plan-opt').forEach(p=>p.classList.remove('on'));el.classList.add('on');}
 function selPkg(el){document.querySelectorAll('.adv-pkg').forEach(p=>p.classList.remove('on'));el.classList.add('on');}
-function openModal(id){document.getElementById(id)&&document.getElementById(id).classList.add('open');}
+function openModal(id){
+  document.getElementById(id)&&document.getElementById(id).classList.add('open');
+  if(id==='sellModal') fillSellCategories();
+}
 function closeModal(id){document.getElementById(id)&&document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 function toggleChat(){document.getElementById('chatPanel').classList.toggle('open');}
@@ -1479,6 +1503,38 @@ async function deleteMyListing() {
   showToast('🗑 Объявление удалено');
 }
 
+/* --- Превью фото --- */
+function previewPhotos(input) {
+  const preview = document.getElementById('sellPhotoPreview');
+  preview.innerHTML = '';
+  const files = Array.from(input.files).slice(0, 5);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      Object.assign(img.style, { width:'64px', height:'64px', objectFit:'cover', borderRadius:'8px', border:'1px solid var(--sand)' });
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('sellUploadZone').querySelector('div:last-of-type').textContent = `${files.length} фото выбрано`;
+}
+
+/* --- Загрузка категорий в форму продажи --- */
+function fillSellCategories() {
+  const sel = document.getElementById('sellCategory');
+  if (!sel) return;
+  sel.innerHTML = '';
+  Object.entries(CAT_NAMES).forEach(([slug, def]) => {
+    if (slug === 'all') return;
+    const opt = document.createElement('option');
+    opt.value = slug;
+    opt.textContent = `${def.icon || '📦'} ${def[lang] || def.en}`;
+    sel.appendChild(opt);
+  });
+}
+
 /* --- Публикация объявления --- */
 async function submitListing() {
   if (!currentUser) {
@@ -1488,36 +1544,65 @@ async function submitListing() {
     return;
   }
 
-  const title = document.querySelector('#sellModal input[type=text]')?.value?.trim();
-  const price = document.querySelector('#sellModal input[type=number]')?.value;
-  const catSel = document.querySelector('#sellModal select');
-  const condSel = document.querySelectorAll('#sellModal select')[1];
-  const negSel = document.querySelectorAll('#sellModal select')[2];
-  const desc = document.querySelector('#sellModal textarea')?.value?.trim();
+  const title = document.getElementById('sellTitle')?.value?.trim();
+  const price = document.getElementById('sellPrice')?.value;
+  const orig_price = document.getElementById('sellOrigPrice')?.value || null;
+  const category_slug = document.getElementById('sellCategory')?.value;
+  const condition = document.getElementById('sellCondition')?.value || 'Good';
+  const is_negotiable = document.getElementById('sellNeg')?.value === 'true';
+  const desc = document.getElementById('sellDesc')?.value?.trim();
+  const errEl = document.getElementById('sellError');
 
-  if (!title || !price) return showToast('Заполните название и цену');
+  errEl.style.display = 'none';
+  if (!title) { errEl.textContent = 'Введите название'; errEl.style.display = 'block'; return; }
+  if (!price) { errEl.textContent = 'Введите цену'; errEl.style.display = 'block'; return; }
+  if (!category_slug) { errEl.textContent = 'Выберите категорию'; errEl.style.display = 'block'; return; }
 
-  const isFeatured = document.querySelector('.plan-opt.on .po-n')?.textContent?.includes('Featured') ||
-                     document.querySelector('.plan-opt.on .po-n')?.textContent?.includes('Топ');
+  const isFeatured = document.querySelector('#sellModal .plan-opt.on .po-n')?.textContent?.includes('Топ');
+  const btn = document.getElementById('sellSubmitBtn');
+  btn.textContent = 'Публикуем…'; btn.disabled = true;
 
-  const { data, error } = await sb.from('listings').insert({
+  // Загружаем фото в Supabase Storage
+  const photoFiles = document.getElementById('sellPhotos')?.files;
+  const imageUrls = [];
+  if (photoFiles && photoFiles.length > 0) {
+    for (const file of Array.from(photoFiles).slice(0, 5)) {
+      const ext = file.name.split('.').pop();
+      const path = `${currentUser.id}/${Date.now()}.${ext}`;
+      const { data: upData, error: upErr } = await sb.storage.from('listing-images').upload(path, file, { upsert: true });
+      if (!upErr) {
+        const { data: urlData } = sb.storage.from('listing-images').getPublicUrl(path);
+        if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
+      }
+    }
+  }
+
+  const { error } = await sb.from('listings').insert({
     user_id: currentUser.id,
     title,
     price: parseFloat(price),
-    condition: condSel?.value || 'Good',
-    category_slug: catSel?.value || 'other',
+    orig_price: orig_price ? parseFloat(orig_price) : null,
+    condition,
+    category_slug,
     description: desc,
-    is_negotiable: negSel?.value !== 'Fixed price',
-    is_featured: isFeatured,
-    emoji: getCatEmoji(catSel?.value),
+    is_negotiable,
+    is_featured: isFeatured || false,
+    emoji: getCatEmoji(category_slug),
     district: 'Al-Rawdah',
     city: 'Jeddah',
-  }).select();
+    images: imageUrls,
+    is_active: true,
+  });
 
-  if (error) { showToast('❌ Ошибка: ' + error.message); return; }
+  btn.textContent = 'Опубликовать →'; btn.disabled = false;
 
-  // Обновляем счётчик категории
-  await sb.rpc('increment_cat_count', { cat_slug: catSel?.value }).catch(() => {});
+  if (error) { errEl.textContent = '❌ ' + error.message; errEl.style.display = 'block'; return; }
+
+  await sb.rpc('increment_cat_count', { cat_slug: category_slug }).catch(() => {});
+
+  // Сбрасываем форму
+  ['sellTitle','sellPrice','sellOrigPrice','sellDesc'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('sellPhotoPreview').innerHTML = '';
 
   closeModal('sellModal');
   showToast('🎉 Объявление опубликовано!');
