@@ -1601,7 +1601,7 @@ async function submitListing() {
     if (btn) { btn.textContent = 'Опубликовать →'; btn.disabled = false; }
     if (error) { showToast('❌ ' + error.message); return; }
 
-    await sb.rpc('increment_cat_count', { cat_slug: category_slug }).catch(() => {});
+    try { await sb.rpc('increment_cat_count', { cat_slug: category_slug }); } catch(_){}
     loadListingsFromDB(currentCatFilter, activeSearch);
 
     // Показываем экран успеха
