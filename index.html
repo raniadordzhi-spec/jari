@@ -376,6 +376,39 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
   </button>
 </nav>
 
+<!-- ─── EID BANNER ─── -->
+<div class="eid-banner">
+  <div class="eid-pattern"></div>
+  <div class="eid-content">
+    <div class="eid-left">
+      <div class="eid-crescent">🌙</div>
+      <div>
+        <div class="eid-ar" style="font-family:'Tajawal',sans-serif;">عيد مبارك</div>
+        <div class="eid-en">Eid Mubarak — Blessed Eid to all!</div>
+      </div>
+    </div>
+    <button class="eid-close" onclick="this.closest('.eid-banner').style.display='none'">✕</button>
+  </div>
+</div>
+<style>
+.eid-banner{position:relative;background:linear-gradient(120deg,#006C35 0%,#007A3D 40%,#004D26 100%);overflow:hidden;border-bottom:3px solid #FFD700;}
+.eid-pattern{position:absolute;inset:0;opacity:.08;background-image:
+  repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%),
+  repeating-linear-gradient(-45deg,#fff 0,#fff 1px,transparent 0,transparent 50%);
+  background-size:20px 20px;}
+.eid-pattern::before{content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,#FFD700 1px,transparent 1px);
+  background-size:30px 30px;opacity:.15;}
+.eid-content{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:.75rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.eid-left{display:flex;align-items:center;gap:1rem;}
+.eid-crescent{font-size:2rem;animation:floatY 3s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(255,215,0,.6));}
+.eid-ar{font-size:1.5rem;font-weight:800;color:#FFD700;letter-spacing:.5px;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,.3);}
+.eid-en{font-size:.78rem;color:rgba(255,255,255,.8);font-weight:500;margin-top:2px;}
+.eid-close{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.eid-close:hover{background:rgba(255,255,255,.25);}
+@media(max-width:640px){.eid-content{padding:.65rem 1rem;}.eid-ar{font-size:1.2rem;}.eid-crescent{font-size:1.6rem;}}
+</style>
+
 <!-- ─── HERO ─── -->
 <section class="hero">
   <div class="hero-grid">
