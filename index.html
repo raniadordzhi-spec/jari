@@ -1884,7 +1884,7 @@ async function openThread(convId, listingTitle, otherName) {
 
 async function loadMessages(convId) {
   const { data, error } = await sb.from('messages')
-    .select('id, text, sender_id, created_at')
+    .select('id, text, content, sender_id, created_at')
     .eq('conversation_id', convId)
     .order('created_at', { ascending: true });
 
@@ -1900,8 +1900,9 @@ async function loadMessages(convId) {
 function renderBubble(m) {
   const mine = m.sender_id === currentUser.id;
   const time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const msgText = m.text || m.content || '';
   return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};">
-    <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${m.text}</div>
+    <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${msgText}</div>
     <div class="msg-time" style="align-self:${mine ? 'flex-end' : 'flex-start'};padding:0 4px;">${time}</div>
   </div>`;
 }
@@ -1916,6 +1917,7 @@ async function sendMessage() {
     conversation_id: activeConvId,
     sender_id: currentUser.id,
     text,
+    content: text,
   });
   if (error) { showToast('❌ ' + error.message); return; }
 
