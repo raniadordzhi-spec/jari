@@ -1605,6 +1605,8 @@ async function submitListing() {
 
   await sb.rpc('increment_cat_count', { cat_slug: category_slug }).catch(() => {});
 
+  loadListingsFromDB(currentCatFilter, activeSearch);
+
   // Показываем экран успеха
   const modal = document.querySelector('#sellModal .modal');
   modal.innerHTML = `
@@ -1618,7 +1620,6 @@ async function submitListing() {
       </div>
     </div>`;
 
-  loadListingsFromDB(currentCatFilter, activeSearch);
 }
 
 function resetSellModal() {
