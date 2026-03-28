@@ -1556,70 +1556,72 @@ async function submitListing() {
   const condition = document.getElementById('sellCondition')?.value || 'Good';
   const is_negotiable = document.getElementById('sellNeg')?.value === 'true';
   const desc = document.getElementById('sellDesc')?.value?.trim();
-  const errEl = document.getElementById('sellError');
 
-  errEl.style.display = 'none';
-  if (!title) { errEl.textContent = 'Введите название'; errEl.style.display = 'block'; return; }
-  if (!price) { errEl.textContent = 'Введите цену'; errEl.style.display = 'block'; return; }
-  if (!category_slug) { errEl.textContent = 'Выберите категорию'; errEl.style.display = 'block'; return; }
+  if (!title) { showToast('Введите название'); return; }
+  if (!price) { showToast('Введите цену'); return; }
+  if (!category_slug) { showToast('Выберите категорию'); return; }
 
   const isFeatured = document.querySelector('#sellModal .plan-opt.on .po-n')?.textContent?.includes('Топ');
   const btn = document.getElementById('sellSubmitBtn');
-  btn.textContent = 'Публикуем…'; btn.disabled = true;
+  if (btn) { btn.textContent = 'Публикуем…'; btn.disabled = true; }
 
-  // Загружаем фото в Supabase Storage
-  const photoFiles = document.getElementById('sellPhotos')?.files;
-  const imageUrls = [];
-  if (photoFiles && photoFiles.length > 0) {
-    for (const file of Array.from(photoFiles).slice(0, 5)) {
-      const ext = file.name.split('.').pop();
-      const path = `${currentUser.id}/${Date.now()}.${ext}`;
-      const { data: upData, error: upErr } = await sb.storage.from('listing-images').upload(path, file, { upsert: true });
-      if (!upErr) {
-        const { data: urlData } = sb.storage.from('listing-images').getPublicUrl(path);
-        if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
+  try {
+    // Загружаем фото
+    const photoFiles = document.getElementById('sellPhotos')?.files;
+    const imageUrls = [];
+    if (photoFiles && photoFiles.length > 0) {
+      for (const file of Array.from(photoFiles).slice(0, 5)) {
+        const ext = file.name.split('.').pop();
+        const path = `${currentUser.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await sb.storage.from('listing-images').upload(path, file, { upsert: true });
+        if (!upErr) {
+          const { data: urlData } = sb.storage.from('listing-images').getPublicUrl(path);
+          if (urlData?.publicUrl) imageUrls.push(urlData.publicUrl);
+        }
       }
     }
+
+    const { error } = await sb.from('listings').insert({
+      user_id: currentUser.id,
+      title,
+      price: parseFloat(price),
+      orig_price: orig_price ? parseFloat(orig_price) : null,
+      condition,
+      category_slug,
+      description: desc,
+      is_negotiable,
+      is_featured: isFeatured || false,
+      emoji: getCatEmoji(category_slug),
+      district: 'Al-Rawdah',
+      city: 'Jeddah',
+      images: imageUrls,
+      is_active: true,
+    });
+
+    if (btn) { btn.textContent = 'Опубликовать →'; btn.disabled = false; }
+    if (error) { showToast('❌ ' + error.message); return; }
+
+    await sb.rpc('increment_cat_count', { cat_slug: category_slug }).catch(() => {});
+    loadListingsFromDB(currentCatFilter, activeSearch);
+
+    // Показываем экран успеха
+    const modal = document.querySelector('#sellModal .modal');
+    if (modal) {
+      modal.innerHTML = `
+        <div style="text-align:center;padding:2.5rem 1rem;">
+          <div style="font-size:4rem;margin-bottom:1rem;animation:floatY 2s ease-in-out infinite;">🎉</div>
+          <h2 style="margin-bottom:.5rem;">Объявление опубликовано!</h2>
+          <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.8rem;">«${title}» уже видно в ленте</p>
+          <div style="display:flex;flex-direction:column;gap:.7rem;">
+            <button class="modal-cta" onclick="resetSellModal()">＋ Добавить ещё</button>
+            <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="closeModal('sellModal');resetSellModal();">Закрыть</button>
+          </div>
+        </div>`;
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = 'Опубликовать →'; btn.disabled = false; }
+    showToast('❌ Ошибка: ' + e.message);
   }
-
-  const { error } = await sb.from('listings').insert({
-    user_id: currentUser.id,
-    title,
-    price: parseFloat(price),
-    orig_price: orig_price ? parseFloat(orig_price) : null,
-    condition,
-    category_slug,
-    description: desc,
-    is_negotiable,
-    is_featured: isFeatured || false,
-    emoji: getCatEmoji(category_slug),
-    district: 'Al-Rawdah',
-    city: 'Jeddah',
-    images: imageUrls,
-    is_active: true,
-  });
-
-  btn.textContent = 'Опубликовать →'; btn.disabled = false;
-
-  if (error) { errEl.textContent = '❌ ' + error.message; errEl.style.display = 'block'; return; }
-
-  await sb.rpc('increment_cat_count', { cat_slug: category_slug }).catch(() => {});
-
-  loadListingsFromDB(currentCatFilter, activeSearch);
-
-  // Показываем экран успеха
-  const modal = document.querySelector('#sellModal .modal');
-  modal.innerHTML = `
-    <div style="text-align:center;padding:2rem 1rem;">
-      <div style="font-size:4rem;margin-bottom:1rem;animation:floatY 2s ease-in-out infinite;">🎉</div>
-      <h2 style="margin-bottom:.5rem;">Объявление опубликовано!</h2>
-      <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.5rem;">«${title}» уже видно в ленте</p>
-      <div style="display:flex;flex-direction:column;gap:.7rem;">
-        <button class="modal-cta" onclick="resetSellModal()">Добавить ещё объявление</button>
-        <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="closeModal('sellModal');resetSellModal();">Закрыть</button>
-      </div>
-    </div>`;
-
 }
 
 function resetSellModal() {
