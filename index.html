@@ -1605,13 +1605,71 @@ async function submitListing() {
 
   await sb.rpc('increment_cat_count', { cat_slug: category_slug }).catch(() => {});
 
-  // Сбрасываем форму
-  ['sellTitle','sellPrice','sellOrigPrice','sellDesc'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  document.getElementById('sellPhotoPreview').innerHTML = '';
+  // Показываем экран успеха
+  const modal = document.querySelector('#sellModal .modal');
+  modal.innerHTML = `
+    <div style="text-align:center;padding:2rem 1rem;">
+      <div style="font-size:4rem;margin-bottom:1rem;animation:floatY 2s ease-in-out infinite;">🎉</div>
+      <h2 style="margin-bottom:.5rem;">Объявление опубликовано!</h2>
+      <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.5rem;">«${title}» уже видно в ленте</p>
+      <div style="display:flex;flex-direction:column;gap:.7rem;">
+        <button class="modal-cta" onclick="resetSellModal()">Добавить ещё объявление</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="closeModal('sellModal');resetSellModal();">Закрыть</button>
+      </div>
+    </div>`;
 
-  closeModal('sellModal');
-  showToast('🎉 Объявление опубликовано!');
   loadListingsFromDB(currentCatFilter, activeSearch);
+}
+
+function resetSellModal() {
+  const modal = document.querySelector('#sellModal .modal');
+  modal.innerHTML = `
+    <button class="modal-close" onclick="closeModal('sellModal')">✕</button>
+    <h2>Разместить объявление</h2>
+    <p class="modal-sub">Опубликуйте за 60 секунд</p>
+    <div class="fg"><label>Название</label><input type="text" id="sellTitle" placeholder="Например: iPhone 14 Pro, 256GB"/></div>
+    <div class="fg-2">
+      <div class="fg"><label>Категория</label><select id="sellCategory"><option value="">Выберите категорию</option></select></div>
+      <div class="fg"><label>Состояние</label>
+        <select id="sellCondition">
+          <option value="Like New">Like New</option>
+          <option value="Good">Good</option>
+          <option value="Fair">Fair</option>
+          <option value="Brand New">Brand New</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg-2">
+      <div class="fg"><label>Цена (SAR)</label><input type="number" id="sellPrice" placeholder="0"/></div>
+      <div class="fg"><label>Старая цена (SAR)</label><input type="number" id="sellOrigPrice" placeholder="необязательно"/></div>
+    </div>
+    <div class="fg"><label>Торг</label>
+      <select id="sellNeg">
+        <option value="true">Торг уместен</option>
+        <option value="false">Фиксированная цена</option>
+      </select>
+    </div>
+    <div class="fg"><label>Описание</label><textarea id="sellDesc" placeholder="Бренд, возраст, состояние, дефекты…"></textarea></div>
+    <div class="fg">
+      <label>Фото (до 5)</label>
+      <div class="upload-zone" id="sellUploadZone" onclick="document.getElementById('sellPhotos').click()">
+        <div class="uz-ic">📷</div>
+        <div>Нажмите чтобы загрузить фото</div>
+        <input type="file" id="sellPhotos" accept="image/*" multiple style="display:none" onchange="previewPhotos(this)"/>
+      </div>
+      <div id="sellPhotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:.5rem;"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="fg"><label>Тип размещения</label>
+      <div class="plan-pick">
+        <div class="plan-opt on" onclick="pickPlan(this)"><div class="po-n">Стандарт</div><div class="po-p">Бесплатно</div><div class="po-d">Обычное место</div></div>
+        <div class="plan-opt" onclick="pickPlan(this)"><div class="po-n">⭐ Топ</div><div class="po-p">15 SAR</div><div class="po-d">Первым в списке</div></div>
+      </div>
+    </div>
+    <p id="sellError" style="color:var(--red);font-size:.78rem;margin-bottom:.5rem;display:none;"></p>
+    <button class="modal-cta" id="sellSubmitBtn" onclick="submitListing()">Опубликовать →</button>
+    <div class="switch">Есть аккаунт? <span onclick="closeModal('sellModal');openModal('loginModal')">Войти</span></div>`;
+  fillSellCategories();
 }
 
 function getCatEmoji(slug) {
