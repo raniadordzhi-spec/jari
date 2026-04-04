@@ -358,9 +358,9 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
   <div class="nav-loc"><span class="pulse"></span><span id="distLabel">Al-Rawdah, Jeddah</span></div>
   <div class="nav-spacer"></div>
   <select class="lang-btn" id="langBtn" onchange="setLang(this.value)">
-    <option value="en">🌐 EN</option>
+    <option value="en" selected>🌐 EN</option>
     <option value="ar">عربي</option>
-    <option value="ru" selected>Рус</option>
+    <option value="ru">Рус</option>
   </select>
   <div class="nav-icon-btn" title="Saved" onclick="openModal('savedModal')">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -985,7 +985,7 @@ const T = {
   }
 };
 
-let lang = 'ru';
+let lang = 'en';
 
 /* ═══════════════════════════════════════════════
    DYNAMIC CATEGORY SYSTEM
