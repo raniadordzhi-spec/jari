@@ -858,9 +858,9 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
     <h2>Make an Offer 🤝</h2>
     <p class="modal-sub" id="offerItemName">Bugaboo Fox 3 Stroller · Listed at 850 SAR</p>
     <div class="fg"><label>Your Offer (SAR)</label><input type="number" placeholder="700" id="offerAmount"/></div>
-    <div class="fg"><label>Message to Seller (optional)</label><textarea placeholder="Hi! I'm interested. Would you accept 700 SAR?"></textarea></div>
+    <div class="fg"><label>Message to Seller (optional)</label><textarea id="offerMessage" placeholder="Hi! I'm interested. Would you accept 700 SAR?"></textarea></div>
     <div class="msg-preview">💡 Tip: Offers within 10–20% of the asking price are accepted fastest.</div>
-    <button class="modal-cta">Send Offer →</button>
+    <button class="modal-cta" onclick="submitOffer()">Send Offer →</button>
   </div>
 </div>
 
@@ -1082,7 +1082,7 @@ let savedIds=new Set();
 function cardHtml(l){
   const t = T[lang];
   const isSaved=savedIds.has(l.id);
-  return`<div class="lcard" onclick="openOffer(${l.id},'${l.title}',${l.price})">
+  return`<div class="lcard" onclick="openOffer(${l.id},'${l.title}',${l.price},'${l.seller_id||''}')">
   <div class="lcard-img">${l.emoji}
     <button class="save-btn${isSaved?' saved':''}" onclick="event.stopPropagation();toggleSave(this,${l.id})">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="${isSaved?'#FF4D4F':'none'}" stroke="${isSaved?'#FF4D4F':'#555'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -1237,11 +1237,75 @@ function closeModal(id){document.getElementById(id)&&document.getElementById(id)
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 function toggleChat(){ if(currentUser){ openMessenger(); } else { document.getElementById('chatPanel').classList.toggle('open'); } }
 
-function openOffer(id,title,price){
+let offerContext = {};
+function openOffer(id, title, price, sellerId) {
   const t = T[lang];
-  document.getElementById('offerItemName').textContent=`${title} · ${t.listedAt} ${price.toLocaleString()} SAR`;
-  document.getElementById('offerAmount').placeholder=Math.round(price*.85);
+  offerContext = { id, title, price, sellerId };
+  document.getElementById('offerItemName').textContent = `${title} · ${t.listedAt} ${price.toLocaleString()} SAR`;
+  document.getElementById('offerAmount').placeholder = Math.round(price * .85);
+  document.getElementById('offerAmount').value = '';
+  document.getElementById('offerMessage').value = '';
   openModal('offerModal');
+}
+
+async function submitOffer() {
+  if (!currentUser) { closeModal('offerModal'); openModal('loginModal'); return; }
+  const { id: listingId, title, price, sellerId } = offerContext;
+  if (!sellerId) { showToast('Cannot identify seller'); return; }
+  if (currentUser.id === sellerId) { showToast('This is your own listing'); return; }
+
+  const amount = parseFloat(document.getElementById('offerAmount').value);
+  if (!amount || amount <= 0) { showToast('Please enter a valid offer amount'); return; }
+  const note = document.getElementById('offerMessage').value.trim();
+
+  const btn = document.querySelector('#offerModal .modal-cta');
+  btn.textContent = 'Sending…'; btn.disabled = true;
+
+  try {
+    // Find or create conversation
+    let { data: existing } = await sb.from('conversations')
+      .select('id').eq('listing_id', listingId).eq('buyer_id', currentUser.id).maybeSingle();
+
+    let convId;
+    if (existing) {
+      convId = existing.id;
+    } else {
+      const { data: created, error } = await sb.from('conversations').insert({
+        listing_id: listingId,
+        buyer_id: currentUser.id,
+        seller_id: sellerId,
+        last_message: '',
+      }).select('id').single();
+      if (error) throw error;
+      convId = created.id;
+    }
+
+    // Build offer message
+    const offerText = `💰 Offer: ${amount.toLocaleString()} SAR for "${title}"${note ? ' — ' + note : ''}`;
+
+    const { error: msgErr } = await sb.from('messages').insert({
+      conversation_id: convId,
+      sender_id: currentUser.id,
+      text: offerText,
+      content: offerText,
+    });
+    if (msgErr) throw msgErr;
+
+    await sb.from('conversations').update({
+      last_message: offerText,
+      last_message_at: new Date().toISOString(),
+    }).eq('id', convId);
+
+    closeModal('offerModal');
+    showToast('✅ Offer sent! The seller will reply in messages.');
+    activeConvId = convId;
+    openMessenger();
+    openThread(convId, sellerId, title);
+  } catch (e) {
+    showToast('❌ ' + e.message);
+  } finally {
+    btn.textContent = 'Send Offer →'; btn.disabled = false;
+  }
 }
 
 function doSearch(){
@@ -1367,6 +1431,7 @@ async function loadListingsFromDB(catFilter = 'all', searchQ = '') {
     cond: l.condition || 'Good',
     cat: l.category_slug || 'other',
     emoji: l.emoji || '📦',
+    seller_id: l.user_id,
     seller: l.profiles?.full_name || 'Seller',
     init: (l.profiles?.full_name || 'S').charAt(0).toUpperCase(),
     stars: l.profiles?.rating ? `${l.profiles.rating}★` : '5.0★',
