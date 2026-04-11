@@ -790,6 +790,9 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
     <p id="authError" style="color:var(--red);font-size:.78rem;margin-bottom:.5rem;display:none;"></p>
     <button class="modal-cta" id="authSubmitBtn" onclick="submitAuth()">Sign In →</button>
 
+    <div style="text-align:center;margin-bottom:.5rem;">
+      <span id="forgotLink" onclick="forgotPassword()" style="font-size:.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;">Forgot password?</span>
+    </div>
     <div class="switch" id="authToggle">
       No account? <span onclick="toggleAuthMode()">Register</span>
     </div>
@@ -847,6 +850,55 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
     <div style="display:flex;gap:.7rem;">
       <button class="modal-cta" onclick="saveEditListing()" style="flex:1;">Save →</button>
       <button onclick="deleteMyListing()" style="flex:0 0 auto;padding:13px 16px;border-radius:25px;border:1.5px solid var(--red);background:transparent;color:var(--red);font-family:'Sora',sans-serif;font-weight:700;cursor:pointer;">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── LISTING DETAIL ─── -->
+<div class="overlay" id="listingDetailModal">
+  <div class="modal" style="max-width:540px;padding:0;overflow:hidden;">
+    <button class="modal-close" onclick="closeModal('listingDetailModal')" style="top:12px;right:12px;z-index:2;">✕</button>
+
+    <!-- Image / Emoji -->
+    <div id="detailImageWrap" style="width:100%;height:220px;background:var(--sky);display:flex;align-items:center;justify-content:center;font-size:5rem;position:relative;overflow:hidden;">
+      <span id="detailEmoji">📦</span>
+      <div id="detailBadges" style="position:absolute;top:12px;left:12px;display:flex;gap:6px;"></div>
+    </div>
+
+    <div style="padding:1.4rem;">
+      <!-- Title + Price -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.4rem;">
+        <div style="font-size:1.15rem;font-weight:800;color:var(--ink);line-height:1.3;" id="detailTitle">—</div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:1.3rem;font-weight:800;color:var(--teal);" id="detailPrice">—</div>
+          <div style="font-size:.75rem;color:var(--muted);text-decoration:line-through;" id="detailOrig"></div>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;" id="detailTags"></div>
+
+      <!-- Description -->
+      <div id="detailDescWrap" style="display:none;margin-bottom:1rem;">
+        <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;">DESCRIPTION</div>
+        <div style="font-size:.88rem;color:var(--ink-mid);line-height:1.6;" id="detailDesc"></div>
+      </div>
+
+      <!-- Seller -->
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem;background:var(--sky);border-radius:12px;margin-bottom:1.2rem;">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--teal);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;" id="detailSellerAv">?</div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:.9rem;color:var(--ink);" id="detailSellerName">—</div>
+          <div style="font-size:.78rem;color:var(--muted);" id="detailSellerMeta">—</div>
+        </div>
+        <div style="font-size:.85rem;color:var(--gold);" id="detailSellerStars">★ 5.0</div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex;gap:.75rem;">
+        <button class="modal-cta" id="detailOfferBtn" style="flex:1;" onclick="triggerOfferFromDetail()">💰 Make an Offer</button>
+        <button id="detailMsgBtn" onclick="triggerMessageFromDetail()" style="flex:1;padding:13px;border-radius:25px;border:2px solid var(--teal);background:transparent;color:var(--teal);font-family:'Sora',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer;">💬 Message</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1082,7 +1134,7 @@ let savedIds=new Set();
 function cardHtml(l){
   const t = T[lang];
   const isSaved=savedIds.has(l.id);
-  return`<div class="lcard" onclick="openOffer(${l.id},'${l.title}',${l.price},'${l.seller_id||''}')">
+  return`<div class="lcard" onclick="openListingDetail(${l.id})">
   <div class="lcard-img">${l.emoji}
     <button class="save-btn${isSaved?' saved':''}" onclick="event.stopPropagation();toggleSave(this,${l.id})">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="${isSaved?'#FF4D4F':'none'}" stroke="${isSaved?'#FF4D4F':'#555'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -1112,10 +1164,89 @@ function cardHtml(l){
 </div>`;
 }
 
+
+// Store all loaded listings by id for quick detail lookup
+const listingStore = {};
+
+function openListingDetail(id) {
+  const l = listingStore[id];
+  if (!l) { openOfferById(id); return; }
+  const t = T[lang];
+
+  // Image / emoji
+  const imgWrap = document.getElementById('detailImageWrap');
+  if (l.images && l.images.length > 0) {
+    imgWrap.innerHTML = `<img src="${l.images[0]}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML='<span style=\"font-size:5rem\">${l.emoji}</span>'"/>
+      <div id="detailBadges" style="position:absolute;top:12px;left:12px;display:flex;gap:6px;"></div>`;
+  } else {
+    document.getElementById('detailEmoji').textContent = l.emoji || '📦';
+  }
+
+  // Badges
+  const badges = document.getElementById('detailBadges');
+  if (badges) badges.innerHTML =
+    (l.featured ? `<span class="badge badge-gold">⭐ ${t.featureLabel}</span>` : '') +
+    (l.pro ? `<span class="badge badge-ink">${t.proLabel}</span>` : '') +
+    (l.neg ? `<span class="badge badge-teal">${t.negLabel}</span>` : '');
+
+  document.getElementById('detailTitle').textContent = l.title;
+  document.getElementById('detailPrice').textContent = `${l.price.toLocaleString()} SAR`;
+  const origEl = document.getElementById('detailOrig');
+  origEl.textContent = l.orig ? `${l.orig.toLocaleString()} SAR` : '';
+
+  // Tags
+  document.getElementById('detailTags').innerHTML =
+    `<span class="lcard-tag ${l.cond === 'Like New' ? 'new' : 'good'}">${l.cond}</span>` +
+    `<span class="lcard-tag">📍 ${t.dist.split(',')[0]}</span>` +
+    `<span class="lcard-tag">👁 ${l.views} ${t.views}</span>`;
+
+  // Description
+  const descWrap = document.getElementById('detailDescWrap');
+  const descEl = document.getElementById('detailDesc');
+  if (l.desc && l.desc.trim()) {
+    descEl.textContent = l.desc;
+    descWrap.style.display = 'block';
+  } else {
+    descWrap.style.display = 'none';
+  }
+
+  // Seller
+  document.getElementById('detailSellerAv').textContent = l.init;
+  document.getElementById('detailSellerName').textContent = l.seller;
+  document.getElementById('detailSellerMeta').textContent = `${t.dist} · ${l.pro ? 'Pro Seller' : 'Member'}`;
+  document.getElementById('detailSellerStars').textContent = `★ ${l.stars.replace('★','')}`;
+
+  // Store context for buttons
+  document.getElementById('detailOfferBtn').dataset.id = l.id;
+  document.getElementById('detailMsgBtn').dataset.id = l.id;
+
+  openModal('listingDetailModal');
+}
+
+function triggerOfferFromDetail() {
+  const l = listingStore[document.getElementById('detailOfferBtn').dataset.id];
+  if (!l) return;
+  closeModal('listingDetailModal');
+  openOffer(l.id, l.title, l.price, l.seller_id || '');
+}
+
+function triggerMessageFromDetail() {
+  const l = listingStore[document.getElementById('detailMsgBtn').dataset.id];
+  if (!l) return;
+  closeModal('listingDetailModal');
+  startConversation(l.id, l.userId, l.title);
+}
+
+function openOfferById(id) {
+  // fallback if listing not in store
+  openModal('offerModal');
+}
+
 function renderListings(data){
   const t = T[lang];
   const grid=document.getElementById('listGrid');
   document.getElementById('listCount').textContent=data.length+' '+t.latestLabel.split(' ')[0];
+  data.forEach(l => { listingStore[l.id] = l; });
   const cards=data.map(l=>cardHtml(l));
   if(cards.length>=4) cards.splice(4,0,sponsorCardHtml(t));
   grid.innerHTML=cards.join('');
@@ -1223,7 +1354,7 @@ function toggleSave(btn,id){
 function filterCat(el,cat){
   currentCatFilter = cat;
   renderCats();
-  renderListings(currentListings());
+  loadListingsFromDB(cat, activeSearch);
 }
 
 function toggleChip(el){el.classList.toggle('on');}
@@ -1310,12 +1441,12 @@ async function submitOffer() {
 
 function doSearch(){
   activeSearch=(document.getElementById('navSearch').value||document.getElementById('heroSearch').value).toLowerCase().trim();
-  renderListings(currentListings());
+  loadListingsFromDB(currentCatFilter, activeSearch);
 }
 function quickSearch(q){
   document.getElementById('heroSearch').value=q;
   activeSearch=q;
-  renderListings(currentListings());
+  loadListingsFromDB(currentCatFilter, q);
   document.getElementById('listGrid').scrollIntoView({behavior:'smooth'});
 }
 
@@ -1439,6 +1570,7 @@ async function loadListingsFromDB(catFilter = 'all', searchQ = '') {
     pro: l.profiles?.is_pro || false,
     views: l.views || 0,
     neg: l.is_negotiable,
+    desc: l.description || '',
     images: l.images || [],
     userId: l.user_id,
   }));
@@ -1463,12 +1595,26 @@ let authMode = 'login'; // 'login' | 'register'
 function toggleAuthMode() {
   authMode = authMode === 'login' ? 'register' : 'login';
   document.getElementById('authTitle').textContent = authMode === 'login' ? 'Welcome' : 'Register';
+  const forgotLink = document.getElementById('forgotLink');
+  if (forgotLink) forgotLink.style.display = authMode === 'login' ? 'inline' : 'none';
   document.getElementById('authSub').textContent = authMode === 'login' ? 'Sign in to manage your listings' : 'Create a free account';
   document.getElementById('authSubmitBtn').textContent = authMode === 'login' ? 'Sign In →' : 'Register →';
   document.getElementById('authToggle').innerHTML = authMode === 'login'
     ? 'No account? <span onclick="toggleAuthMode()">Register</span>'
     : 'Have an account? <span onclick="toggleAuthMode()">Sign In</span>';
   document.getElementById('authError').style.display = 'none';
+}
+
+
+async function forgotPassword() {
+  const email = document.getElementById('authEmail')?.value?.trim();
+  if (!email) { showToast('Enter your email address first'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href
+  });
+  if (error) { showToast('❌ ' + error.message); return; }
+  showToast('✅ Password reset email sent — check your inbox');
+  closeModal('loginModal');
 }
 
 async function submitAuth() {
