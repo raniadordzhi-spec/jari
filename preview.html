@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jari — Option B Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --navy:     #0F4C6B;
+  --navy-d:   #0D2137;
+  --gold:     #E8A020;
+  --gold-d:   #C8880A;
+  --coral:    #F47C3C;
+  --cream:    #FDF8F0;
+  --sand:     #EDE8DF;
+  --white:    #FFFFFF;
+  --muted:    #64748B;
+  --green:    #10B981;
+  --red:      #EF4444;
+}
+body { font-family: 'Sora', sans-serif; background: var(--cream); color: var(--navy-d); }
+
+/* NAV */
+nav { background: var(--navy); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-icon { width: 36px; height: 36px; background: var(--gold); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Tajawal'; font-size: 1.2rem; font-weight: 800; color: var(--navy); }
+.logo-name { font-size: 1.1rem; font-weight: 800; color: white; }
+.logo-sub { font-size: .7rem; color: rgba(255,255,255,.5); font-family: 'Tajawal'; }
+.nav-right { display: flex; align-items: center; gap: .75rem; }
+.btn-ghost { background: transparent; border: 1.5px solid rgba(255,255,255,.3); color: white; padding: 7px 18px; border-radius: 20px; font-family: 'Sora'; font-size: .82rem; font-weight: 600; cursor: pointer; }
+.btn-primary { background: var(--gold); border: none; color: var(--navy-d); padding: 8px 18px; border-radius: 20px; font-family: 'Sora'; font-size: .82rem; font-weight: 700; cursor: pointer; }
+
+/* HERO */
+.hero { background: linear-gradient(135deg, var(--navy) 0%, #1a6a8a 100%); padding: 4rem 2rem; text-align: center; }
+.hero-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(232,160,32,.15); border: 1px solid rgba(232,160,32,.3); color: var(--gold); padding: 5px 14px; border-radius: 20px; font-size: .75rem; font-weight: 600; margin-bottom: 1.2rem; }
+.dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.hero h1 { font-size: 2.5rem; font-weight: 800; color: white; margin-bottom: .75rem; line-height: 1.2; }
+.hero h1 em { color: var(--gold); font-style: normal; }
+.hero-sub { color: rgba(255,255,255,.7); font-size: .95rem; max-width: 500px; margin: 0 auto 2rem; line-height: 1.6; }
+.hero-search { display: flex; max-width: 480px; margin: 0 auto 1.5rem; background: white; border-radius: 30px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,.2); }
+.hero-search input { flex: 1; border: none; padding: 13px 20px; font-family: 'Sora'; font-size: .88rem; outline: none; color: var(--navy-d); }
+.hero-search button { background: var(--gold); border: none; padding: 0 24px; font-family: 'Sora'; font-weight: 700; font-size: .88rem; color: var(--navy-d); cursor: pointer; }
+.hero-btns { display: flex; gap: .75rem; justify-content: center; }
+.hero-btn1 { background: var(--gold); border: none; color: var(--navy-d); padding: 12px 28px; border-radius: 25px; font-family: 'Sora'; font-weight: 700; font-size: .9rem; cursor: pointer; }
+.hero-btn2 { background: transparent; border: 2px solid rgba(255,255,255,.4); color: white; padding: 12px 28px; border-radius: 25px; font-family: 'Sora'; font-weight: 700; font-size: .9rem; cursor: pointer; }
+
+/* CATEGORIES */
+.section { padding: 2.5rem 2rem; max-width: 900px; margin: 0 auto; }
+.sec-title { font-size: 1.3rem; font-weight: 800; color: var(--navy-d); margin-bottom: 1.2rem; }
+.cats { display: flex; gap: .75rem; flex-wrap: wrap; }
+.cat-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: .7rem 1rem; background: white; border: 1.5px solid var(--sand); border-radius: 14px; cursor: pointer; transition: all .15s; min-width: 70px; }
+.cat-btn:hover, .cat-btn.on { border-color: var(--gold); background: #FEF9EE; }
+.cat-ic { font-size: 1.4rem; }
+.cat-lb { font-size: .68rem; font-weight: 700; color: var(--navy-d); }
+
+/* LISTINGS */
+.listings { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+.lcard { background: white; border-radius: 16px; overflow: hidden; border: 1.5px solid var(--sand); box-shadow: 0 2px 10px rgba(15,31,45,.06); cursor: pointer; transition: transform .15s; }
+.lcard:hover { transform: translateY(-3px); }
+.lcard-img { height: 110px; background: var(--cream); display: flex; align-items: center; justify-content: center; font-size: 2.8rem; position: relative; }
+.badge { font-size: .62rem; font-weight: 800; padding: 3px 8px; border-radius: 20px; }
+.badge-gold { background: #FEF3C7; color: #92400E; }
+.badge-navy { background: #E0F2FE; color: var(--navy); }
+.badge-coral { background: #FEE2E2; color: #991B1B; }
+.lcard-body { padding: .75rem; }
+.lcard-title { font-size: .85rem; font-weight: 700; color: var(--navy-d); margin-bottom: .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcard-price { font-size: 1rem; font-weight: 800; color: var(--navy); margin-bottom: .4rem; }
+.lcard-tag { font-size: .65rem; background: var(--cream); border: 1px solid var(--sand); border-radius: 20px; padding: 2px 8px; color: var(--muted); display: inline-block; margin-right: 4px; }
+.lcard-footer { padding: .6rem .75rem; border-top: 1px solid var(--sand); display: flex; align-items: center; justify-content: space-between; }
+.seller-av { width: 24px; height: 24px; border-radius: 50%; background: var(--navy); color: white; font-size: .7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.btn-msg { background: #FEF9EE; border: 1.5px solid #F5D88A; color: var(--gold-d); padding: 4px 10px; border-radius: 20px; font-family: 'Sora'; font-size: .7rem; font-weight: 700; cursor: pointer; }
+.btn-msg:hover { background: var(--gold); color: var(--navy-d); }
+
+/* OFFER MODAL PREVIEW */
+.modal-preview { background: white; border-radius: 20px; padding: 1.8rem; max-width: 360px; margin: 0 auto; box-shadow: 0 16px 48px rgba(0,0,0,.12); }
+.modal-preview h2 { font-size: 1.2rem; font-weight: 800; color: var(--navy-d); margin-bottom: .3rem; }
+.modal-sub { font-size: .82rem; color: var(--muted); margin-bottom: 1.2rem; }
+.fg { margin-bottom: .9rem; }
+.fg label { font-size: .75rem; font-weight: 700; color: var(--navy-d); display: block; margin-bottom: .3rem; }
+.fg input, .fg textarea { width: 100%; border: 1.5px solid var(--sand); border-radius: 10px; padding: 9px 13px; font-family: 'Sora'; font-size: .85rem; outline: none; color: var(--navy-d); background: var(--cream); }
+.fg input:focus, .fg textarea:focus { border-color: var(--gold); }
+.modal-cta { width: 100%; padding: 13px; border-radius: 25px; background: linear-gradient(135deg, var(--gold), var(--gold-d)); color: var(--navy-d); font-family: 'Sora'; font-weight: 700; font-size: .95rem; border: none; cursor: pointer; }
+
+/* SECTION BG */
+.section-dark { background: linear-gradient(135deg, var(--navy-d) 0%, #0F4C6B 100%); padding: 3rem 2rem; text-align: center; }
+.section-dark .sec-title { color: white; }
+.section-dark p { color: rgba(255,255,255,.6); font-size: .9rem; margin-bottom: 2rem; }
+.plan { background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.1); border-radius: 20px; padding: 1.5rem; display: inline-block; margin: 0 .5rem; min-width: 200px; text-align: left; }
+.plan.pro { border-color: var(--gold); background: rgba(232,160,32,.08); }
+.plan-name { font-size: 1rem; font-weight: 800; color: white; margin-bottom: .3rem; }
+.plan-price { font-size: 1.5rem; font-weight: 800; color: var(--gold); }
+.plan-desc { font-size: .78rem; color: rgba(255,255,255,.5); margin-top: .3rem; }
+
+/* STATS BAR */
+.stats { background: white; border-bottom: 1px solid var(--sand); padding: .75rem 2rem; display: flex; gap: 2rem; justify-content: center; }
+.stat { text-align: center; }
+.stat-n { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+.stat-l { font-size: .68rem; color: var(--muted); font-weight: 600; }
+
+/* LABEL */
+.label { background: var(--coral); color: white; font-size: .7rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: .5rem; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" href="#">
+    <div class="logo-icon">ج</div>
+    <div>
+      <div class="logo-name">Jari</div>
+      <div class="logo-sub">جاري</div>
+    </div>
+  </a>
+  <div class="nav-right">
+    <button class="btn-ghost">Sign In</button>
+    <button class="btn-primary">＋ Post Item</button>
+  </div>
+</nav>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-n">1,240</div><div class="stat-l">Active Listings</div></div>
+  <div class="stat"><div class="stat-n">430</div><div class="stat-l">Verified Sellers</div></div>
+  <div class="stat"><div class="stat-n">4.9★</div><div class="stat-l">Avg. Rating</div></div>
+  <div class="stat"><div class="stat-n">Free</div><div class="stat-l">Listing Fee</div></div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-pill"><span class="dot"></span> Live · Al-Rawdah District</div>
+  <h1>Buy, Sell &<br><em>Discover</em> Near You</h1>
+  <p class="hero-sub">The smartest local marketplace — find trusted neighbors selling anything near you.</p>
+  <div class="hero-search">
+    <input type="text" placeholder="Search items, services, brands…">
+    <button>Search</button>
+  </div>
+  <div class="hero-btns">
+    <button class="hero-btn1">Browse Listings →</button>
+    <button class="hero-btn2">Sell an Item →</button>
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<div class="section">
+  <div class="sec-title">Browse Categories</div>
+  <div class="cats">
+    <div class="cat-btn on"><div class="cat-ic">🛒</div><div class="cat-lb">All</div></div>
+    <div class="cat-btn"><div class="cat-ic">📱</div><div class="cat-lb">Electronics</div></div>
+    <div class="cat-btn"><div class="cat-ic">🛋️</div><div class="cat-lb">Furniture</div></div>
+    <div class="cat-btn"><div class="cat-ic">👗</div><div class="cat-lb">Fashion</div></div>
+    <div class="cat-btn"><div class="cat-ic">🚗</div><div class="cat-lb">Cars</div></div>
+    <div class="cat-btn"><div class="cat-ic">🤝</div><div class="cat-lb">Services</div></div>
+    <div class="cat-btn"><div class="cat-ic">🏡</div><div class="cat-lb">Home</div></div>
+    <div class="cat-btn"><div class="cat-ic">📚</div><div class="cat-lb">Books</div></div>
+  </div>
+</div>
+
+<!-- LISTINGS -->
+<div class="section" style="padding-top:0">
+  <div class="sec-title">Latest Near You</div>
+  <div class="listings">
+    <div class="lcard">
+      <div class="lcard-img">📱
+        <div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;">
+          <span class="badge badge-gold">⭐ Featured</span>
+        </div>
+      </div>
+      <div class="lcard-body">
+        <div class="lcard-title">iPhone 14 Pro 256GB</div>
+        <div class="lcard-price">3,200 SAR</div>
+        <div><span class="lcard-tag">Like New</span><span class="lcard-tag">📍 Al-Rawdah</span></div>
+      </div>
+      <div class="lcard-footer">
+        <div style="display:flex;align-items:center;gap:6px;"><div class="seller-av">K</div><span style="font-size:.72rem;font-weight:600;">Khalid M.</span></div>
+        <button class="btn-msg">💬 Message</button>
+      </div>
+    </div>
+    <div class="lcard">
+      <div class="lcard-img">🛋️</div>
+      <div class="lcard-body">
+        <div class="lcard-title">IKEA KLIPPAN Sofa</div>
+        <div class="lcard-price">850 SAR</div>
+        <div><span class="lcard-tag">Good</span><span class="lcard-tag">📍 Al-Rawdah</span></div>
+      </div>
+      <div class="lcard-footer">
+        <div style="display:flex;align-items:center;gap:6px;"><div class="seller-av">A</div><span style="font-size:.72rem;font-weight:600;">Amal T.</span></div>
+        <button class="btn-msg">💬 Message</button>
+      </div>
+    </div>
+    <div class="lcard">
+      <div class="lcard-img">👟
+        <div style="position:absolute;top:8px;left:8px;">
+          <span class="badge badge-coral">Negotiable</span>
+        </div>
+      </div>
+      <div class="lcard-body">
+        <div class="lcard-title">Nike Air Max 270</div>
+        <div class="lcard-price">180 SAR <span style="font-size:.75rem;color:var(--muted);text-decoration:line-through;">240</span></div>
+        <div><span class="lcard-tag">Like New</span><span class="lcard-tag">📍 Al-Rawdah</span></div>
+      </div>
+      <div class="lcard-footer">
+        <div style="display:flex;align-items:center;gap:6px;"><div class="seller-av">S</div><span style="font-size:.72rem;font-weight:600;">Sara H.</span></div>
+        <button class="btn-msg">💬 Message</button>
+      </div>
+    </div>
+    <div class="lcard">
+      <div class="lcard-img">❄️</div>
+      <div class="lcard-body">
+        <div class="lcard-title">AC Repair Service</div>
+        <div class="lcard-price">from 150 SAR</div>
+        <div><span class="lcard-tag">Service</span><span class="lcard-tag">📍 Al-Rawdah</span></div>
+      </div>
+      <div class="lcard-footer">
+        <div style="display:flex;align-items:center;gap:6px;"><div class="seller-av">F</div><span style="font-size:.72rem;font-weight:600;">Fix Masters</span></div>
+        <button class="btn-msg">💬 Message</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OFFER MODAL PREVIEW -->
+<div class="section">
+  <div class="label">Modal Preview</div>
+  <div class="modal-preview">
+    <h2>Make an Offer 🤝</h2>
+    <p class="modal-sub">iPhone 14 Pro · Listed at 3,200 SAR</p>
+    <div class="fg"><label>Your Offer (SAR)</label><input type="number" placeholder="2,800"></div>
+    <div class="fg"><label>Message to Seller (optional)</label><textarea placeholder="Hi! Would you accept 2,800 SAR?" style="height:70px;resize:none;"></textarea></div>
+    <button class="modal-cta">Send Offer →</button>
+  </div>
+</div>
+
+<!-- PRICING SECTION -->
+<div class="section-dark">
+  <div class="sec-title">Sell More With Jari</div>
+  <p>Start free — upgrade when you're ready</p>
+  <div>
+    <div class="plan">
+      <div class="plan-name">Standard</div>
+      <div class="plan-price">Free</div>
+      <div class="plan-desc">Standard placement in feed</div>
+    </div>
+    <div class="plan pro">
+      <div class="plan-name">⭐ Featured</div>
+      <div class="plan-price">15 SAR</div>
+      <div class="plan-desc">Top of the listing feed</div>
+    </div>
+  </div>
+</div>
+
+<div style="padding:2rem;text-align:center;color:var(--muted);font-size:.8rem;background:var(--navy-d);color:rgba(255,255,255,.4);">
+  Jari جاري · Al-Rawdah, Jeddah · Color Option B — Gulf Gold Preview
+</div>
+
+</body>
+</html>
