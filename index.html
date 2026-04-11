@@ -2172,6 +2172,75 @@ async async function toggleSaveDB(btn, listingId) {
   }
 }
 
+
+/* ─── Location filter functions ─── */
+let currentCityFilter = '';
+let currentDistrictFilter = '';
+
+function initLocationFilters() {
+  const citySelect = document.getElementById('cityFilter');
+  if (!citySelect) return;
+  Object.keys(SAUDI_LOCATIONS).sort().forEach(city => {
+    const opt = document.createElement('option');
+    opt.value = city; opt.textContent = city;
+    citySelect.appendChild(opt);
+  });
+}
+
+function onCityFilterChange() {
+  const city = document.getElementById('cityFilter').value;
+  currentCityFilter = city;
+  currentDistrictFilter = '';
+  const distSel = document.getElementById('districtFilter');
+  distSel.innerHTML = '<option value="">📍 All Districts</option>';
+  if (city && SAUDI_LOCATIONS[city]) {
+    SAUDI_LOCATIONS[city].forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      distSel.appendChild(opt);
+    });
+    distSel.style.display = 'inline-block';
+  } else {
+    distSel.style.display = 'none';
+  }
+  const distLabel = document.getElementById('distLabel');
+  if (distLabel) distLabel.textContent = city || 'All of Saudi Arabia';
+  loadListingsFromDB(currentCatFilter, activeSearch, city, '');
+}
+
+function onDistrictFilterChange() {
+  currentDistrictFilter = document.getElementById('districtFilter').value;
+  loadListingsFromDB(currentCatFilter, activeSearch, currentCityFilter, currentDistrictFilter);
+}
+
+function updateSellDistricts() {
+  const city = document.getElementById('sellCity')?.value;
+  const distSel = document.getElementById('sellDistrict');
+  if (!distSel) return;
+  distSel.innerHTML = '<option value="">Select district…</option>';
+  if (city && SAUDI_LOCATIONS[city]) {
+    SAUDI_LOCATIONS[city].forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      distSel.appendChild(opt);
+    });
+  }
+}
+
+function fillSellCityDistrict() {
+  const citySel = document.getElementById('sellCity');
+  if (!citySel || citySel.options.length > 1) return;
+  Object.keys(SAUDI_LOCATIONS).sort().forEach(city => {
+    const opt = document.createElement('option');
+    opt.value = city; opt.textContent = city;
+    citySel.appendChild(opt);
+  });
+  citySel.value = 'Jeddah';
+  updateSellDistricts();
+  const distSel = document.getElementById('sellDistrict');
+  if (distSel) distSel.value = 'Al-Rawdah';
+}
+
 /* --- Override filter/search to query DB --- */
 const _origFilterCat = filterCat;
 filterCat = function(el, cat) {
