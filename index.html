@@ -1461,7 +1461,10 @@ function pickPlan(el){document.querySelectorAll('.plan-opt').forEach(p=>p.classL
 function selPkg(el){document.querySelectorAll('.adv-pkg').forEach(p=>p.classList.remove('on'));el.classList.add('on');}
 function openModal(id){
   document.getElementById(id)&&document.getElementById(id).classList.add('open');
-  if(id==='sellModal') { fillSellCategories(); fillSellCityDistrict(); }
+  if(id==='sellModal') {
+    try { fillSellCategories(); } catch(e){}
+    try { fillSellCityDistrict(); } catch(e){}
+  }
 }
 function closeModal(id){document.getElementById(id)&&document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
