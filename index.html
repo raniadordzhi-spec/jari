@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jari جاري — Buy, Sell & Discover Near You</title>
+<title>Jari جاري — Buy, Sell &amp; Discover Near You</title>
+<meta name="description" content="The smartest local marketplace in Al-Rawdah, Jeddah. Buy, sell and discover items near you.">
+<meta property="og:title" content="Jari جاري — Buy, Sell &amp; Discover Near You">
+<meta property="og:description" content="The smartest local marketplace in Al-Rawdah, Jeddah. Buy, sell and discover items near you.">
+<meta property="og:url" content="https://raniadordzhi-spec.github.io/jari/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#2BBFAA">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -786,6 +792,7 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
 
     <div class="auth-divider"><span>or</span></div>
 
+    <div class="fg" id="nameFieldWrap" style="display:none;"><label>Full Name</label><input type="text" id="authName" placeholder="Your name"/></div>
     <div class="fg"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"/></div>
     <div class="fg"><label>Password</label><input type="password" id="authPassword" placeholder="••••••••" minlength="6"/></div>
     <p id="authError" style="color:var(--red);font-size:.78rem;margin-bottom:.5rem;display:none;"></p>
@@ -800,7 +807,7 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
   </div>
 </div>
 
-<!-- ─── ЛИЧНЫЙ КАБИНЕТ ─── -->
+<!-- ─── ACCOUNT CABINET ─── -->
 <div class="overlay" id="cabinetModal">
   <div class="modal" style="max-width:560px;">
     <button class="modal-close" onclick="closeModal('cabinetModal')">✕</button>
@@ -821,7 +828,7 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
   </div>
 </div>
 
-<!-- ─── РЕДАКТИРОВАНИЕ ОБЪЯВЛЕНИЯ ─── -->
+<!-- ─── EDIT LISTING ─── -->
 <div class="overlay" id="editListingModal">
   <div class="modal" style="max-width:480px;">
     <button class="modal-close" onclick="closeModal('editListingModal')">✕</button>
@@ -1539,7 +1546,7 @@ function simulateNewListing(catSlug, catName, catEmoji){
 }
 
 /* ═══════════════════════════════════════════════
-   SUPABASE — подключение к базе данных
+   SUPABASE — database connection
 ═══════════════════════════════════════════════ */
 const SUPA_URL = 'https://rhjwhbegrhghghmfpply.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoandoYmVncmhnaGdobWZwcGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MDgyMjgsImV4cCI6MjA5MDE4NDIyOH0.dUjpuqMLWnl09hPtg_0Mhe8sgoSc8HF5wIv4oeA8iqI';
@@ -1547,7 +1554,7 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 let currentUser = null;
 
-/* --- Загрузка категорий из БД --- */
+/* --- Load categories from DB --- */
 async function loadCatsFromDB() {
   const { data, error } = await sb.from('categories').select('*').order('listing_count', { ascending: false });
   if (error || !data) return;
@@ -1561,7 +1568,7 @@ async function loadCatsFromDB() {
   renderCats();
 }
 
-/* --- Загрузка объявлений из БД --- */
+/* --- Load listings from DB --- */
 async function loadListingsFromDB(catFilter = 'all', searchQ = '') {
   showListingsLoading(true);
   let query = sb.from('listings')
@@ -1580,13 +1587,13 @@ async function loadListingsFromDB(catFilter = 'all', searchQ = '') {
   if (error) { console.error('Load error:', error); return; }
 
   if (!data || data.length === 0) {
-    // Нет реальных объявлений — показываем демо
+    // No real listings — show demo
     renderListings(listings);
     showToast('📋 Showing demo listings. Add your first real one!');
     return;
   }
 
-  // Конвертируем формат Supabase → формат карточки
+  // Convert Supabase format → card format
   const mapped = data.map(l => ({
     id: l.id,
     title: l.title,
@@ -1611,7 +1618,7 @@ async function loadListingsFromDB(catFilter = 'all', searchQ = '') {
   renderListings(mapped);
 }
 
-/* --- Загрузочный спиннер --- */
+/* --- Loading spinner --- */
 function showListingsLoading(on) {
   const grid = document.getElementById('listGrid');
   if (on) {
@@ -1622,7 +1629,7 @@ function showListingsLoading(on) {
   }
 }
 
-/* --- Авторизация: Email + Google --- */
+/* --- Auth: Email + Google --- */
 let authMode = 'login'; // 'login' | 'register'
 
 function toggleAuthMode() {
@@ -1630,6 +1637,8 @@ function toggleAuthMode() {
   document.getElementById('authTitle').textContent = authMode === 'login' ? 'Welcome' : 'Register';
   const forgotLink = document.getElementById('forgotLink');
   if (forgotLink) forgotLink.style.display = authMode === 'login' ? 'inline' : 'none';
+  const nameWrap = document.getElementById('nameFieldWrap');
+  if (nameWrap) nameWrap.style.display = authMode === 'register' ? 'block' : 'none';
   document.getElementById('authSub').textContent = authMode === 'login' ? 'Sign in to manage your listings' : 'Create a free account';
   document.getElementById('authSubmitBtn').textContent = authMode === 'login' ? 'Sign In →' : 'Register →';
   document.getElementById('authToggle').innerHTML = authMode === 'login'
@@ -1764,8 +1773,12 @@ async function submitAuth() {
   closeModal('loginModal');
   updateNavForUser();
   showToast('✅ You are signed in!');
-  // Создаём профиль если нет
-  await sb.from('profiles').upsert({ id: currentUser.id }, { onConflict: 'id', ignoreDuplicates: true });
+  // Create profile if not exists
+  const fullName = document.getElementById('authName')?.value?.trim();
+  await sb.from('profiles').upsert({
+    id: currentUser.id,
+    full_name: fullName || currentUser.user_metadata?.full_name || null,
+  }, { onConflict: 'id', ignoreDuplicates: false });
 }
 
 async function signInGoogle() {
@@ -1887,7 +1900,7 @@ async function quickDeleteListing(id, title) {
   showToast('🗑 Listing deleted');
 }
 
-/* --- Превью фото --- */
+/* --- Photo preview --- */
 function previewPhotos(input) {
   const preview = document.getElementById('sellPhotoPreview');
   preview.innerHTML = '';
@@ -1905,7 +1918,7 @@ function previewPhotos(input) {
   document.getElementById('sellUploadZone').querySelector('div:last-of-type').textContent = `${files.length} photo(s) selected`;
 }
 
-/* --- Загрузка категорий в форму продажи (только из БД) --- */
+/* --- Load categories into sell form (DB only) --- */
 let dbCategories = [];
 
 async function fillSellCategories() {
@@ -1924,7 +1937,7 @@ async function fillSellCategories() {
   });
 }
 
-/* --- Публикация объявления --- */
+/* --- Publish listing --- */
 async function submitListing() {
   if (!currentUser) {
     closeModal('sellModal');
@@ -1950,7 +1963,7 @@ async function submitListing() {
   if (btn) { btn.textContent = 'Posting…'; btn.disabled = true; }
 
   try {
-    // Загружаем фото
+    // Upload photos
     const photoFiles = document.getElementById('sellPhotos')?.files;
     const imageUrls = [];
     if (photoFiles && photoFiles.length > 0) {
@@ -2063,7 +2076,7 @@ function getCatEmoji(slug) {
   return CAT_NAMES[slug]?.icon || '📦';
 }
 
-/* --- Подписка на новые объявления (realtime) --- */
+/* --- Subscribe to new listings (realtime) --- */
 function subscribeToNewListings() {
   sb.channel('listings-channel')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, payload => {
@@ -2073,8 +2086,8 @@ function subscribeToNewListings() {
     .subscribe();
 }
 
-/* --- Сохранение в избранное через Supabase --- */
-async function toggleSaveDB(btn, listingId) {
+/* --- Save to favourites via Supabase --- */
+async async function toggleSaveDB(btn, listingId) {
   if (!currentUser) { openModal('loginModal'); return; }
   const isSaved = savedIds.has(listingId);
   if (isSaved) {
@@ -2092,7 +2105,7 @@ async function toggleSaveDB(btn, listingId) {
   }
 }
 
-/* --- Переопределяем фильтрацию для работы с БД --- */
+/* --- Override filter/search to query DB --- */
 const _origFilterCat = filterCat;
 filterCat = function(el, cat) {
   currentCatFilter = cat;
@@ -2115,9 +2128,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (data.session) { currentUser = data.session.user; updateNavForUser(); }
   });
 
-  sb.auth.onAuthStateChange((_event, session) => {
+  sb.auth.onAuthStateChange(async (_event, session) => {
     currentUser = session?.user || null;
-    if (currentUser) { updateNavForUser(); closeModal('loginModal'); }
+    if (currentUser) {
+      updateNavForUser();
+      closeModal('loginModal');
+      // Ensure profile exists (important for Google sign-in)
+      await sb.from('profiles').upsert({ id: currentUser.id }, { onConflict: 'id', ignoreDuplicates: true });
+    }
   });
 });
 
@@ -2136,7 +2154,7 @@ async function startConversation(listingId, sellerId, listingTitle) {
 
   // Find or create conversation
   let { data: existing } = await sb.from('conversations')
-    .select('id').eq('listing_id', listingId).eq('buyer_id', currentUser.id).single();
+    .select('id').eq('listing_id', listingId).eq('buyer_id', currentUser.id).maybeSingle();
 
   let convId;
   if (existing) {
@@ -2156,7 +2174,7 @@ async function startConversation(listingId, sellerId, listingTitle) {
   openThread(convId, listingTitle, 'Seller', sellerId, listingId);
 }
 
-async function openMessenger() {
+async async function openMessenger() {
   if (!currentUser) { openModal('loginModal'); return; }
   document.getElementById('chatPanel').classList.remove('open');
   openModal('messengerModal');
@@ -2289,7 +2307,7 @@ function subscribeToMessages(convId) {
 }
 
 /* ═══════════════════════════════════════════════
-   INIT — запускаем с Supabase
+   INIT — start with Supabase
 ═══════════════════════════════════════════════ */
 setLang('en');
 loadCatsFromDB().then(() => {
