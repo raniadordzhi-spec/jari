@@ -2157,7 +2157,7 @@ function subscribeToNewListings() {
 }
 
 /* --- Save to favourites via Supabase --- */
-async async function toggleSaveDB(btn, listingId) {
+async function toggleSaveDB(btn, listingId) {
   if (!currentUser) { openModal('loginModal'); return; }
   const isSaved = savedIds.has(listingId);
   if (isSaved) {
@@ -2313,7 +2313,7 @@ async function startConversation(listingId, sellerId, listingTitle) {
   openThread(convId, listingTitle, 'Seller', sellerId, listingId);
 }
 
-async async function openMessenger() {
+async function openMessenger() {
   if (!currentUser) { openModal('loginModal'); return; }
   document.getElementById('chatPanel').classList.remove('open');
   openModal('messengerModal');
