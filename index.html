@@ -2790,11 +2790,11 @@ async function loadListingsFromDBMultiDistrict(city, districts) {
 
 
 <!-- ─── LOCATION PICKER MODAL ─── -->
-<div class="modal-overlay" id="locationModal" onclick="if(event.target===this)closeModal('locationModal')">
-  <div class="modal-box" style="max-width:480px;max-height:85vh;display:flex;flex-direction:column;">
-    <div class="modal-hd">
-      <div class="modal-title">📍 Choose Location</div>
-      <button class="modal-close" onclick="closeModal('locationModal')">✕</button>
+<div class="overlay" id="locationModal" onclick="if(event.target===this)closeModal('locationModal')">
+  <div class="modal" style="max-width:480px;max-height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.5rem;border-bottom:1px solid var(--sand);flex-shrink:0;">
+      <div style="font-weight:800;font-size:1.1rem;color:var(--ink);">📍 Choose Location</div>
+      <button class="modal-close" style="position:static;" onclick="closeModal('locationModal')">✕</button>
     </div>
     <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--sand);">
       <button class="loc-all-btn" onclick="applyLocation('','')">🌍 All of Saudi Arabia</button>
