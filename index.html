@@ -1998,7 +1998,7 @@ async function fillSellCategories() {
   dbCategories.forEach(cat => {
     const opt = document.createElement('option');
     opt.value = cat.slug;
-    opt.textContent = `${cat.icon || '📦'} ${cat.name_ru || cat.name_en}`;
+    opt.textContent = `${cat.icon || '📦'} ${cat.name_en || cat.name_ru}`;
     sel.appendChild(opt);
   });
 }
