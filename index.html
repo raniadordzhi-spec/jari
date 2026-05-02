@@ -10,7 +10,136 @@
 <meta property="og:url" content="https://raniadordzhi-spec.github.io/jari/">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#2BBFAA">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+/* ─── LOCATION PICKER ─── */
+let locSelectedCity = '';
+let locSelectedDistricts = new Set();
+
+function openLocationPicker() {
+  locSelectedCity = currentCityFilter || '';
+  locSelectedDistricts = new Set(currentDistrictFilter ? [currentDistrictFilter] : []);
+  renderLocCities();
+  if (locSelectedCity) {
+    renderLocDistricts(locSelectedCity);
+  } else {
+    document.getElementById('locDistrictSection').style.display = 'none';
+  }
+  openModal('locationModal');
+}
+
+function renderLocCities() {
+  const el = document.getElementById('locCityList');
+  el.innerHTML = Object.keys(SAUDI_LOCATIONS).sort().map(city =>
+    `<button class="loc-city-btn${locSelectedCity===city?' active':''}" onclick="selectLocCity('${city}')">${city}</button>`
+  ).join('');
+}
+
+function selectLocCity(city) {
+  locSelectedCity = city;
+  locSelectedDistricts = new Set();
+  renderLocCities();
+  renderLocDistricts(city);
+}
+
+function renderLocDistricts(city) {
+  const section = document.getElementById('locDistrictSection');
+  section.style.display = 'flex';
+  document.getElementById('locCityName').textContent = city;
+  const districts = SAUDI_LOCATIONS[city] || [];
+  document.getElementById('locDistrictList').innerHTML = districts.map(d =>
+    `<button class="loc-dist-btn${locSelectedDistricts.has(d)?' selected':''}" onclick="toggleLocDistrict('${d.replace(/'/g,"\\'")}',this)">${d}</button>`
+  ).join('');
+}
+
+function toggleLocDistrict(d, btn) {
+  if (locSelectedDistricts.has(d)) {
+    locSelectedDistricts.delete(d);
+    btn.classList.remove('selected');
+  } else {
+    locSelectedDistricts.add(d);
+    btn.classList.add('selected');
+  }
+}
+
+function applyLocation(city, district) {
+  currentCityFilter = city;
+  currentDistrictFilter = district;
+  updateDistLabel();
+  syncLocationSelects();
+  loadListingsFromDB(currentCatFilter, activeSearch, city, district);
+  closeModal('locationModal');
+}
+
+function applyLocationCityOnly() {
+  locSelectedDistricts = new Set();
+  applyLocation(locSelectedCity, '');
+}
+
+function applySelectedDistricts() {
+  const districts = [...locSelectedDistricts];
+  if (districts.length === 0) {
+    applyLocation(locSelectedCity, '');
+  } else if (districts.length === 1) {
+    applyLocation(locSelectedCity, districts[0]);
+  } else {
+    // Multiple districts: filter client-side after loading city
+    currentCityFilter = locSelectedCity;
+    currentDistrictFilter = districts.join(',');
+    updateDistLabel();
+    syncLocationSelects();
+    loadListingsFromDBMultiDistrict(locSelectedCity, districts);
+    closeModal('locationModal');
+  }
+}
+
+function updateDistLabel() {
+  const el = document.getElementById('distLabel');
+  if (!el) return;
+  if (!currentCityFilter) { el.textContent = 'All of Saudi Arabia'; return; }
+  if (!currentDistrictFilter) { el.textContent = currentCityFilter; return; }
+  const districts = currentDistrictFilter.split(',');
+  if (districts.length === 1) { el.textContent = districts[0] + ', ' + currentCityFilter; return; }
+  el.textContent = districts.length + ' districts · ' + currentCityFilter;
+}
+
+function syncLocationSelects() {
+  const cityEl = document.getElementById('cityFilter');
+  const distEl = document.getElementById('districtFilter');
+  if (cityEl) cityEl.value = currentCityFilter || '';
+  if (distEl) distEl.value = (currentDistrictFilter && !currentDistrictFilter.includes(',')) ? currentDistrictFilter : '';
+}
+
+async function loadListingsFromDBMultiDistrict(city, districts) {
+  showListingsLoading(true);
+  let query = sb.from('listings')
+    .select('*, profiles(full_name, rating, is_pro, is_verified, avatar_url)')
+    .eq('is_active', true)
+    .eq('city', city)
+    .in('district', districts)
+    .order('is_featured', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(80);
+  const { data, error } = await query;
+  showListingsLoading(false);
+  if (error) { showToast('Error loading listings'); return; }
+  const mapped = (data || []).map(l => ({
+    id: l.id, title: l.title, price: parseFloat(l.price),
+    orig: l.original_price ? parseFloat(l.original_price) : null,
+    cond: l.condition || 'Good', cat: l.category_slug || 'other',
+    emoji: l.emoji || '📦', image_url: l.images?.[0] || null,
+    seller: l.profiles?.full_name || 'Seller',
+    init: (l.profiles?.full_name || 'S').charAt(0).toUpperCase(),
+    stars: l.profiles?.rating ? `${l.profiles.rating}★` : '5.0★',
+    featured: l.is_featured, pro: l.profiles?.is_pro || false,
+    views: l.views || 0, neg: l.is_negotiable, desc: l.description || '',
+    city: l.city || '', district: l.district || '',
+    images: l.images || [], userId: l.user_id,
+    profiles: l.profiles, created_at: l.created_at,
+  }));
+  renderListings(mapped);
+}
+
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -354,6 +483,16 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
   .bottom-nav{display:block;}
   body{padding-bottom:64px;}
 }
+
+/* ─── LOCATION PICKER ─── */
+.loc-city-btn{padding:.45rem 1rem;border-radius:20px;border:1.5px solid var(--sand);background:white;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:600;color:var(--ink);cursor:pointer;transition:all .15s;}
+.loc-city-btn:hover{border-color:var(--teal);color:var(--teal-d);}
+.loc-city-btn.active{background:var(--teal);color:white;border-color:var(--teal);}
+.loc-dist-btn{padding:.4rem .9rem;border-radius:20px;border:1.5px solid var(--sand);background:white;font-family:'Sora',sans-serif;font-size:.76rem;font-weight:600;color:var(--ink-mid);cursor:pointer;transition:all .15s;}
+.loc-dist-btn:hover{border-color:var(--teal-mid);background:var(--teal-pale);}
+.loc-dist-btn.selected{background:var(--teal);color:white;border-color:var(--teal);}
+.loc-all-btn{width:100%;padding:.6rem 1rem;border-radius:12px;border:1.5px dashed var(--teal-mid);background:var(--teal-pale);font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:var(--teal-d);cursor:pointer;transition:all .15s;text-align:left;}
+.loc-all-btn:hover{background:var(--teal);color:white;border-color:var(--teal);}
 </style>
 </head>
 <body>
@@ -371,7 +510,7 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input type="text" id="navSearch" placeholder="Search items, services, brands…" onkeydown="if(event.key==='Enter')doSearch()"/>
   </div>
-  <div class="nav-loc"><span class="pulse"></span><span id="distLabel">Al-Rawdah, Jeddah</span></div>
+  <div class="nav-loc" onclick="openLocationPicker()" title="Change location"><span class="pulse"></span><span id="distLabel">Al-Rawdah, Jeddah</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:3px;opacity:.7"><path d="M6 9l6 6 6-6"/></svg></div>
   <div class="nav-spacer"></div>
   <select class="lang-btn" id="langBtn" onchange="setLang(this.value)">
     <option value="en" selected>🌐 EN</option>
@@ -414,6 +553,16 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
 .my-listing-meta{font-size:.7rem;color:var(--muted);}
 .my-listing-edit{flex-shrink:0;padding:6px 12px;border-radius:20px;border:1.5px solid var(--teal);background:transparent;color:var(--teal-d);font-family:'Sora',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;}
 .my-listing-edit:hover{background:var(--teal-pale);}
+
+/* ─── LOCATION PICKER ─── */
+.loc-city-btn{padding:.45rem 1rem;border-radius:20px;border:1.5px solid var(--sand);background:white;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:600;color:var(--ink);cursor:pointer;transition:all .15s;}
+.loc-city-btn:hover{border-color:var(--teal);color:var(--teal-d);}
+.loc-city-btn.active{background:var(--teal);color:white;border-color:var(--teal);}
+.loc-dist-btn{padding:.4rem .9rem;border-radius:20px;border:1.5px solid var(--sand);background:white;font-family:'Sora',sans-serif;font-size:.76rem;font-weight:600;color:var(--ink-mid);cursor:pointer;transition:all .15s;}
+.loc-dist-btn:hover{border-color:var(--teal-mid);background:var(--teal-pale);}
+.loc-dist-btn.selected{background:var(--teal);color:white;border-color:var(--teal);}
+.loc-all-btn{width:100%;padding:.6rem 1rem;border-radius:12px;border:1.5px dashed var(--teal-mid);background:var(--teal-pale);font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:var(--teal-d);cursor:pointer;transition:all .15s;text-align:left;}
+.loc-all-btn:hover{background:var(--teal);color:white;border-color:var(--teal);}
 </style>
 
 <!-- ─── HERO ─── -->
@@ -514,13 +663,10 @@ footer{background:#080F16;padding:3rem 2rem 1.8rem;color:rgba(255,255,255,.45);}
   <div class="chip" onclick="toggleChip(this)">💰 Under 100 SAR</div>
   <div class="chip" onclick="toggleChip(this)">🔥 Hot Deals</div>
   <div class="chip" onclick="toggleChip(this)">🆕 Just Posted</div>
-  <select class="sort-sel" id="cityFilter" onchange="onCityFilterChange()" style="margin-left:0;">
-    <option value="">🏙️ All Cities</option>
-  </select>
-  <select class="sort-sel" id="districtFilter" onchange="onDistrictFilterChange()" style="display:none;">
-    <option value="">📍 All Districts</option>
-  </select>
-  <select class="sort-sel" id="sortSel">
+  <!-- hidden selects kept for JS compatibility -->
+  <select id="cityFilter" style="display:none;" onchange="onCityFilterChange()"><option value="">All Cities</option></select>
+  <select id="districtFilter" style="display:none;" onchange="onDistrictFilterChange()"><option value="">All Districts</option></select>
+  <select class="sort-sel" id="sortSel" style="margin-left:auto;">
     <option>Sort: Newest First</option>
     <option>Price: Low → High</option>
     <option>Price: High → Low</option>
@@ -1689,6 +1835,7 @@ async function loadListingsFromDB(catFilter = 'all', searchQ = '', cityQ = '', d
     cond: l.condition || 'Good',
     cat: l.category_slug || 'other',
     emoji: l.emoji || '📦',
+    image_url: l.images?.[0] || null,
     seller_id: l.user_id,
     seller: l.profiles?.full_name || 'Seller',
     init: (l.profiles?.full_name || 'S').charAt(0).toUpperCase(),
@@ -1702,6 +1849,8 @@ async function loadListingsFromDB(catFilter = 'all', searchQ = '', cityQ = '', d
     district: l.district || '',
     images: l.images || [],
     userId: l.user_id,
+    profiles: l.profiles,
+    created_at: l.created_at,
   }));
 
   renderListings(mapped);
@@ -2477,6 +2626,135 @@ loadCatsFromDB().then(() => {
   loadListingsFromDB();
   subscribeToNewListings();
 });
+
+/* ─── LOCATION PICKER ─── */
+let locSelectedCity = '';
+let locSelectedDistricts = new Set();
+
+function openLocationPicker() {
+  locSelectedCity = currentCityFilter || '';
+  locSelectedDistricts = new Set(currentDistrictFilter ? [currentDistrictFilter] : []);
+  renderLocCities();
+  if (locSelectedCity) {
+    renderLocDistricts(locSelectedCity);
+  } else {
+    document.getElementById('locDistrictSection').style.display = 'none';
+  }
+  openModal('locationModal');
+}
+
+function renderLocCities() {
+  const el = document.getElementById('locCityList');
+  el.innerHTML = Object.keys(SAUDI_LOCATIONS).sort().map(city =>
+    `<button class="loc-city-btn${locSelectedCity===city?' active':''}" onclick="selectLocCity('${city}')">${city}</button>`
+  ).join('');
+}
+
+function selectLocCity(city) {
+  locSelectedCity = city;
+  locSelectedDistricts = new Set();
+  renderLocCities();
+  renderLocDistricts(city);
+}
+
+function renderLocDistricts(city) {
+  const section = document.getElementById('locDistrictSection');
+  section.style.display = 'flex';
+  document.getElementById('locCityName').textContent = city;
+  const districts = SAUDI_LOCATIONS[city] || [];
+  document.getElementById('locDistrictList').innerHTML = districts.map(d =>
+    `<button class="loc-dist-btn${locSelectedDistricts.has(d)?' selected':''}" onclick="toggleLocDistrict('${d.replace(/'/g,"\\'")}',this)">${d}</button>`
+  ).join('');
+}
+
+function toggleLocDistrict(d, btn) {
+  if (locSelectedDistricts.has(d)) {
+    locSelectedDistricts.delete(d);
+    btn.classList.remove('selected');
+  } else {
+    locSelectedDistricts.add(d);
+    btn.classList.add('selected');
+  }
+}
+
+function applyLocation(city, district) {
+  currentCityFilter = city;
+  currentDistrictFilter = district;
+  updateDistLabel();
+  syncLocationSelects();
+  loadListingsFromDB(currentCatFilter, activeSearch, city, district);
+  closeModal('locationModal');
+}
+
+function applyLocationCityOnly() {
+  locSelectedDistricts = new Set();
+  applyLocation(locSelectedCity, '');
+}
+
+function applySelectedDistricts() {
+  const districts = [...locSelectedDistricts];
+  if (districts.length === 0) {
+    applyLocation(locSelectedCity, '');
+  } else if (districts.length === 1) {
+    applyLocation(locSelectedCity, districts[0]);
+  } else {
+    // Multiple districts: filter client-side after loading city
+    currentCityFilter = locSelectedCity;
+    currentDistrictFilter = districts.join(',');
+    updateDistLabel();
+    syncLocationSelects();
+    loadListingsFromDBMultiDistrict(locSelectedCity, districts);
+    closeModal('locationModal');
+  }
+}
+
+function updateDistLabel() {
+  const el = document.getElementById('distLabel');
+  if (!el) return;
+  if (!currentCityFilter) { el.textContent = 'All of Saudi Arabia'; return; }
+  if (!currentDistrictFilter) { el.textContent = currentCityFilter; return; }
+  const districts = currentDistrictFilter.split(',');
+  if (districts.length === 1) { el.textContent = districts[0] + ', ' + currentCityFilter; return; }
+  el.textContent = districts.length + ' districts · ' + currentCityFilter;
+}
+
+function syncLocationSelects() {
+  const cityEl = document.getElementById('cityFilter');
+  const distEl = document.getElementById('districtFilter');
+  if (cityEl) cityEl.value = currentCityFilter || '';
+  if (distEl) distEl.value = (currentDistrictFilter && !currentDistrictFilter.includes(',')) ? currentDistrictFilter : '';
+}
+
+async function loadListingsFromDBMultiDistrict(city, districts) {
+  showListingsLoading(true);
+  let query = sb.from('listings')
+    .select('*, profiles(full_name, rating, is_pro, is_verified, avatar_url)')
+    .eq('is_active', true)
+    .eq('city', city)
+    .in('district', districts)
+    .order('is_featured', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(80);
+  const { data, error } = await query;
+  showListingsLoading(false);
+  if (error) { showToast('Error loading listings'); return; }
+  const mapped = (data || []).map(l => ({
+    id: l.id, title: l.title, price: parseFloat(l.price),
+    orig: l.original_price ? parseFloat(l.original_price) : null,
+    cond: l.condition || 'Good', cat: l.category_slug || 'other',
+    emoji: l.emoji || '📦', image_url: l.images?.[0] || null,
+    seller: l.profiles?.full_name || 'Seller',
+    init: (l.profiles?.full_name || 'S').charAt(0).toUpperCase(),
+    stars: l.profiles?.rating ? `${l.profiles.rating}★` : '5.0★',
+    featured: l.is_featured, pro: l.profiles?.is_pro || false,
+    views: l.views || 0, neg: l.is_negotiable, desc: l.description || '',
+    city: l.city || '', district: l.district || '',
+    images: l.images || [], userId: l.user_id,
+    profiles: l.profiles, created_at: l.created_at,
+  }));
+  renderListings(mapped);
+}
+
 </script>
 <!-- ─── NEW CATEGORY MODAL ─── -->
 <div class="overlay" id="newCatModal">
@@ -2510,5 +2788,34 @@ loadCatsFromDB().then(() => {
   </div>
 </div>
 
+
+<!-- ─── LOCATION PICKER MODAL ─── -->
+<div class="modal-overlay" id="locationModal" onclick="if(event.target===this)closeModal('locationModal')">
+  <div class="modal-box" style="max-width:480px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-hd">
+      <div class="modal-title">📍 Choose Location</div>
+      <button class="modal-close" onclick="closeModal('locationModal')">✕</button>
+    </div>
+    <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--sand);">
+      <button class="loc-all-btn" onclick="applyLocation('','')">🌍 All of Saudi Arabia</button>
+    </div>
+    <div style="padding:1rem 1.5rem 0;font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Select City</div>
+    <div id="locCityList" style="padding:.5rem 1.5rem;display:flex;flex-wrap:wrap;gap:.5rem;"></div>
+    <div id="locDistrictSection" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div style="padding:.75rem 1.5rem 0;font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">
+        Districts in <span id="locCityName" style="color:var(--teal-d);"></span>
+        <span style="font-size:.7rem;color:var(--muted);font-weight:400;margin-left:6px;">(select one or more)</span>
+      </div>
+      <div style="padding:.5rem 1rem;border-bottom:1px solid var(--sand);">
+        <button class="loc-all-btn" id="locAllDistricts" onclick="applyLocationCityOnly()">📍 All districts in this city</button>
+      </div>
+      <div id="locDistrictList" style="padding:.75rem 1.5rem;display:flex;flex-wrap:wrap;gap:.5rem;overflow-y:auto;flex:1;"></div>
+      <div style="padding:1rem 1.5rem;border-top:1px solid var(--sand);display:flex;gap:.75rem;">
+        <button class="btn-ghost" style="flex:1;" onclick="closeModal('locationModal')">Cancel</button>
+        <button class="btn-primary" style="flex:2;" onclick="applySelectedDistricts()">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
